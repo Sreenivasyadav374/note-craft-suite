@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuthContext } from '../context/AuthContext';
+import { getNotes, createNote, updateNote, deleteNote as deleteNoteApi } from '../lib/api';
 import { Search, Plus, FileText, Trash2, Edit3, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,38 +28,42 @@ const NotesApp = () => {
   const [editTags, setEditTags] = useState("");
   const { toast } = useToast();
 
-  // Load notes from localStorage on mount
+
+  const { token, isAuthenticated } = useAuthContext();
+
+  // Load notes from backend on mount or when token changes
   useEffect(() => {
-    const savedNotes = localStorage.getItem("notes");
-    if (savedNotes) {
-      const parsedNotes = JSON.parse(savedNotes).map((note: any) => ({
-        ...note,
-        createdAt: new Date(note.createdAt),
-        updatedAt: new Date(note.updatedAt),
+    if (!token) return;
+    getNotes(token).then(data => {
+      // Convert backend _id to id and parse dates
+      const parsed = data.map((note: any) => ({
+        id: note._id,
+        title: note.title,
+        content: note.content,
+        tags: note.tags || [],
+        createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
+        updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
       }));
-      setNotes(parsedNotes);
-    }
-  }, []);
+      setNotes(parsed);
+    });
+  }, [token]);
 
-  // Save notes to localStorage whenever notes change
-  useEffect(() => {
-    localStorage.setItem("notes", JSON.stringify(notes));
-  }, [notes]);
-
-  const createNewNote = () => {
-    const newNote: Note = {
-      id: crypto.randomUUID(),
-      title: "Untitled Note",
-      content: "",
-      tags: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  const createNewNote = async () => {
+    if (!token) return;
+    const newNote = await createNote(token, "Untitled Note", "");
+    const parsedNote = {
+      id: newNote._id,
+      title: newNote.title,
+      content: newNote.content,
+      tags: newNote.tags || [],
+      createdAt: newNote.createdAt ? new Date(newNote.createdAt) : new Date(),
+      updatedAt: newNote.updatedAt ? new Date(newNote.updatedAt) : new Date(),
     };
-    setNotes([newNote, ...notes]);
-    setSelectedNote(newNote);
+    setNotes([parsedNote, ...notes]);
+    setSelectedNote(parsedNote);
     setIsEditing(true);
-    setEditTitle(newNote.title);
-    setEditContent(newNote.content);
+    setEditTitle(parsedNote.title);
+    setEditContent(parsedNote.content);
     setEditTags("");
     toast({
       title: "New note created",
@@ -65,7 +71,9 @@ const NotesApp = () => {
     });
   };
 
-  const deleteNote = (noteId: string) => {
+  const deleteNote = async (noteId: string) => {
+    if (!token) return;
+    await deleteNoteApi(token, noteId);
     setNotes(notes.filter(note => note.id !== noteId));
     if (selectedNote?.id === noteId) {
       setSelectedNote(null);
@@ -85,20 +93,17 @@ const NotesApp = () => {
     setEditTags(note.tags.join(", "));
   };
 
-  const saveNote = () => {
-    if (!selectedNote) return;
+  const saveNote = async () => {
+    if (!selectedNote || !token) return;
 
-    const tagsArray = editTags
-      .split(",")
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
-
+    const updated = await updateNote(token, selectedNote.id, editTitle.trim() || "Untitled Note", editContent);
     const updatedNote: Note = {
-      ...selectedNote,
-      title: editTitle.trim() || "Untitled Note",
-      content: editContent,
-      tags: tagsArray,
-      updatedAt: new Date(),
+      id: updated._id,
+      title: updated.title,
+      content: updated.content,
+      tags: updated.tags || [],
+      createdAt: updated.createdAt ? new Date(updated.createdAt) : new Date(),
+      updatedAt: updated.updatedAt ? new Date(updated.updatedAt) : new Date(),
     };
 
     setNotes(notes.map(note => 
@@ -126,6 +131,10 @@ const NotesApp = () => {
     note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  if (!isAuthenticated) {
+    return <div className="p-8 text-center text-lg">Please log in to view your notes.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">

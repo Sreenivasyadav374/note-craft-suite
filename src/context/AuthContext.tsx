@@ -1,0 +1,114 @@
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { register as apiRegister, login as apiLogin } from '../lib/api';
+import { decodeJWT } from '../lib/jwt';
+
+export interface AuthContextType {
+  token: string | null;
+  refreshToken: string | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  error: string | null;
+  initializing: boolean;
+  register: (username: string, password: string) => Promise<any>;
+  login: (username: string, password: string) => Promise<any>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [token, setToken] = useState<string | null>(null);
+  const [refreshTokenValue, setRefreshTokenValue] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [initializing, setInitializing] = useState(true);
+
+  // On mount, restore token and refreshToken from localStorage, then set initializing to false
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    const storedRefresh = localStorage.getItem('refreshToken');
+    setToken(storedToken);
+    setRefreshTokenValue(storedRefresh);
+    setInitializing(false);
+  }, []);
+
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
+    }
+    if (refreshTokenValue) {
+      localStorage.setItem('refreshToken', refreshTokenValue);
+    } else {
+      localStorage.removeItem('refreshToken');
+    }
+    // Check token expiration and auto-refresh
+    if (token) {
+      const payload = decodeJWT(token);
+      if (payload && payload.exp) {
+        const now = Math.floor(Date.now() / 1000);
+        if (payload.exp < now) {
+          // Try to refresh
+          if (refreshTokenValue) {
+            import('../lib/refresh').then(({ refreshToken }) => {
+              refreshToken(refreshTokenValue).then(res => {
+                if (res.token) setToken(res.token);
+                else setToken(null);
+              });
+            });
+          } else {
+            setToken(null);
+          }
+        } else {
+          setTimeout(() => setToken(null), (payload.exp - now) * 1000);
+        }
+      }
+    }
+  }, [token, refreshTokenValue]);
+
+  const register = async (username: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    const res = await apiRegister(username, password);
+    setLoading(false);
+    if (res.error) setError(res.error);
+    return res;
+  };
+
+  const login = async (username: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    const res = await apiLogin(username, password);
+    setLoading(false);
+    if (res.token) {
+      setToken(res.token);
+      if (res.refreshToken) setRefreshTokenValue(res.refreshToken);
+    } else if (res.error) {
+      setError(res.error);
+    }
+    return res;
+  };
+
+  const logout = () => {
+    if (refreshTokenValue) {
+      import('../lib/logout').then(({ logoutApi }) => {
+        logoutApi(refreshTokenValue);
+      });
+    }
+    setToken(null);
+    setRefreshTokenValue(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ token, refreshToken: refreshTokenValue, isAuthenticated: !!token, loading, error, initializing, register, login, logout }}>
+      {!initializing && children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuthContext() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuthContext must be used within AuthProvider');
+  return ctx;
+}
