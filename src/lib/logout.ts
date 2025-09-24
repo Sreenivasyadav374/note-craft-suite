@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:4000/api';
+const API_URL = 'http://localhost:4001/api';
 
 export async function logoutApi(refreshToken: string) {
   const res = await fetch(`${API_URL}/auth/logout`, {

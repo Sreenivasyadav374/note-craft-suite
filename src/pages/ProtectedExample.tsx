@@ -10,7 +10,7 @@ export default function ProtectedExample() {
   useEffect(() => {
     if (!isAuthenticated) return;
     setLoading(true);
-    fetch('http://localhost:4000/api/notes', {
+    fetch('http://localhost:4001/api/notes', {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())

@@ -1,6 +1,6 @@
 // Utility functions for authentication and notes API
 
-const API_URL = 'http://localhost:4000/api';
+const API_URL = 'http://localhost:4001/api';
 
 export async function register(username: string, password: string) {
   const res = await fetch(`${API_URL}/auth/register`, {

@@ -40,3 +40,9 @@
 .read-the-docs {
   color: #888;
 }
+
+.background-image {
+  background-image: url('../public/login-page-image.jpg');
+  background-size: cover;
+  background-position: center;
+}
