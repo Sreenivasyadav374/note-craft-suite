@@ -179,32 +179,38 @@ export default function NotesPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-gradient-hero border-b shadow-elegant">
-        <div className="container mx-auto px-6 py-8">
+      <header className="bg-gradient-hero border-b shadow-elegant relative overflow-hidden">
+        {/* Floating orbs */}
+        <div className="absolute top-0 left-0 w-72 h-72 bg-primary-glow/20 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '-3s' }}></div>
+        
+        <div className="container mx-auto px-6 py-12 relative z-10">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <FileText className="h-8 w-8 text-white" />
+            <div className="flex items-center space-x-4 animate-fade-in">
+              <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20 shadow-luxury">
+                <FileText className="h-10 w-10 text-white drop-shadow-lg" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">NotesApp</h1>
-                <p className="text-white/80">
-                  Capture your thoughts beautifully
+                <h1 className="text-5xl font-display font-bold text-white mb-2 tracking-tight">
+                  Premium Notes
+                </h1>
+                <p className="text-xl text-white/90 font-sans">
+                  Luxury note-taking reimagined
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <Button
                 type="button"
                 onClick={createNewNote}
-                className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm transition-spring"
+                className="bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md transition-spring shadow-luxury font-sans text-lg px-8 py-3 rounded-xl"
                 size="lg"
                 disabled={loadingAction === "create"}
               >
                 {loadingAction === "create" ? (
-                  <Spinner className="h-5 w-5 mr-2" />
+                  <Spinner className="h-5 w-5 mr-3" />
                 ) : (
-                  <Plus className="h-5 w-5 mr-2" />
+                  <Plus className="h-5 w-5 mr-3" />
                 )}
                 New Note
               </Button>
@@ -214,62 +220,69 @@ export default function NotesPage() {
                   logout();
                   setTimeout(() => setLoadingAction(null), 1000);
                 }}
-                className="bg-red-600 hover:bg-red-700 text-white border-white/30 backdrop-blur-sm transition-spring"
+                className="bg-red-600/80 hover:bg-red-600 text-white border border-red-500/30 backdrop-blur-md transition-spring shadow-luxury font-sans text-lg px-8 py-3 rounded-xl"
                 size="lg"
                 disabled={loadingAction === "logout"}
               >
                 {loadingAction === "logout" ? (
-                  <Spinner className="h-5 w-5 mr-2" />
+                  <Spinner className="h-5 w-5 mr-3" />
                 ) : null}
-                Logout
+                Sign Out
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-6 py-10">
+        <div className="grid lg:grid-cols-3 gap-10">
           {/* Sidebar - Notes List */}
-          <div className="lg:col-span-1">
-            <div className="mb-6">
+          <div className="lg:col-span-1 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="mb-8">
+              <h2 className="text-2xl font-display font-semibold mb-4 text-foreground">
+                Your Collection
+              </h2>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
-                  placeholder="Search notes..."
+                  placeholder="Search your notes..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 bg-card shadow-card border-0 focus:shadow-glow transition-smooth"
+                  className="pl-12 bg-card/80 backdrop-blur-md shadow-card border-0 focus:shadow-glow transition-smooth text-lg py-6 rounded-xl font-sans placeholder:text-muted-foreground/70"
                 />
               </div>
             </div>
 
-            <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+            <div className="space-y-5 max-h-[calc(100vh-340px)] overflow-y-auto">
               {filteredNotes.length === 0 ? (
-                <Card className="shadow-card border-0 bg-gradient-card">
-                  <CardContent className="p-6 text-center">
-                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">
+                <Card className="shadow-card border-0 bg-gradient-card animate-scale-in">
+                  <CardContent className="p-8 text-center">
+                    <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-6 opacity-60" />
+                    <h3 className="text-xl font-display font-semibold mb-2 text-foreground">
+                      {notes.length === 0 ? "Begin Your Journey" : "No Results Found"}
+                    </h3>
+                    <p className="text-muted-foreground font-sans">
                       {notes.length === 0
-                        ? "No notes yet. Create your first note!"
-                        : "No notes found."}
+                        ? "Create your first luxury note and start capturing brilliance."
+                        : "Try a different search term to find your notes."}
                     </p>
                   </CardContent>
                 </Card>
               ) : (
-                filteredNotes.map((note) => (
+                filteredNotes.map((note, index) => (
                   <Card
                     key={note.id}
-                    className={`cursor-pointer transition-spring shadow-card border-0 bg-gradient-card hover:shadow-glow ${
+                    className={`cursor-pointer transition-spring shadow-card border-0 bg-gradient-card hover:shadow-glow animate-fade-in ${
                       selectedNote?.id === note.id
-                        ? "ring-2 ring-primary shadow-glow"
-                        : ""
+                        ? "ring-2 ring-primary shadow-glow scale-[1.02]"
+                        : "hover:scale-[1.01]"
                     }`}
                     onClick={() => setSelectedNote(note)}
+                    style={{ animationDelay: `${0.4 + index * 0.1}s` }}
                   >
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg truncate mr-2">
+                        <CardTitle className="text-xl font-display font-semibold truncate mr-3 text-foreground leading-tight">
                           {note.title}
                         </CardTitle>
                         <Button
@@ -279,7 +292,7 @@ export default function NotesPage() {
                             e.stopPropagation();
                             deleteNote(note.id);
                           }}
-                          className="text-muted-foreground hover:text-destructive transition-smooth"
+                          className="text-muted-foreground hover:text-destructive transition-smooth rounded-lg p-2"
                           disabled={loadingAction === "delete-" + note.id}
                         >
                           {loadingAction === "delete-" + note.id ? (
@@ -291,29 +304,33 @@ export default function NotesPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+                      <p className="text-base text-muted-foreground line-clamp-3 mb-4 font-sans leading-relaxed">
                         {note.content || "No content"}
                       </p>
                       {note.tags && note.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-3">
+                        <div className="flex flex-wrap gap-2 mb-4">
                           {note.tags.slice(0, 3).map((tag, index) => (
                             <Badge
                               key={index}
                               variant="secondary"
-                              className="text-xs"
+                              className="text-xs font-sans px-3 py-1 rounded-full bg-primary/10 text-primary border-0"
                             >
                               {tag}
                             </Badge>
                           ))}
                           {note.tags.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-xs font-sans px-3 py-1 rounded-full bg-primary/10 text-primary border-0">
                               +{note.tags.length - 3}
                             </Badge>
                           )}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">
-                        {note.updatedAt.toLocaleDateString()}
+                      <p className="text-sm text-muted-foreground font-sans font-medium">
+                        Last edited: {note.updatedAt.toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        })}
                       </p>
                     </CardContent>
                   </Card>
@@ -323,68 +340,66 @@ export default function NotesPage() {
           </div>
 
           {/* Main Content - Note Editor */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 animate-fade-in" style={{ animationDelay: '0.5s' }}>
             {selectedNote ? (
-              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-200px)]">
-                <CardHeader className="border-b bg-white/50 backdrop-blur-sm">
+              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)] animate-scale-in">
+                <CardHeader className="border-b bg-white/30 backdrop-blur-md p-8">
                   <div className="flex items-center justify-between">
                     {isEditing ? (
                       <Input
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
-                        className="text-xl font-bold border-0 bg-transparent p-0 focus:ring-0"
-                        placeholder="Note title..."
+                        className="text-3xl font-display font-bold border-0 bg-transparent p-0 focus:ring-0 placeholder:text-muted-foreground/50"
+                        placeholder="Enter your note title..."
                       />
                     ) : (
-                      <CardTitle className="text-2xl">
+                      <CardTitle className="text-3xl font-display font-bold text-foreground leading-tight">
                         {selectedNote.title}
                       </CardTitle>
                     )}
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
                       {isEditing ? (
                         <>
                           <Button
                             onClick={saveNote}
-                            size="sm"
-                            className="bg-gradient-primary hover:opacity-90"
+                            className="bg-gradient-primary hover:opacity-90 shadow-glow font-sans font-medium px-6 py-3 rounded-xl"
                             disabled={loadingAction === "save"}
                           >
                             {loadingAction === "save" ? (
-                              <Spinner className="h-4 w-4 mr-2" />
+                              <Spinner className="h-5 w-5 mr-2" />
                             ) : (
-                              <Save className="h-4 w-4 mr-2" />
+                              <Save className="h-5 w-5 mr-2" />
                             )}
-                            Save
+                            Save Changes
                           </Button>
                           <Button
                             onClick={cancelEditing}
                             variant="outline"
-                            size="sm"
+                            className="font-sans font-medium px-6 py-3 rounded-xl border-muted-foreground/20 hover:bg-muted/50"
                           >
-                            <X className="h-4 w-4 mr-2" />
+                            <X className="h-5 w-5 mr-2" />
                             Cancel
                           </Button>
                         </>
                       ) : (
                         <Button
                           onClick={() => startEditing(selectedNote)}
-                          size="sm"
-                          className="bg-gradient-primary hover:opacity-90"
+                          className="bg-gradient-primary hover:opacity-90 shadow-glow font-sans font-medium px-6 py-3 rounded-xl"
                         >
-                          <Edit3 className="h-4 w-4 mr-2" />
-                          Edit
+                          <Edit3 className="h-5 w-5 mr-2" />
+                          Edit Note
                         </Button>
                       )}
                     </div>
                   </div>
 
                   {isEditing && (
-                    <div className="mt-4">
+                    <div className="mt-6">
                       <Input
                         value={editTags}
                         onChange={(e) => setEditTags(e.target.value)}
-                        placeholder="Tags (comma separated)..."
-                        className="border-0 bg-transparent"
+                        placeholder="Add tags (comma separated)..."
+                        className="border-0 bg-transparent text-lg font-sans placeholder:text-muted-foreground/60 p-0"
                       />
                     </div>
                   )}
@@ -392,12 +407,12 @@ export default function NotesPage() {
                   {!isEditing &&
                     selectedNote.tags &&
                     selectedNote.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-4">
+                      <div className="flex flex-wrap gap-3 mt-6">
                         {selectedNote.tags.map((tag, index) => (
                           <Badge
                             key={index}
                             variant="outline"
-                            className="bg-primary/10 border-primary/30"
+                            className="bg-primary/10 border-primary/30 font-sans px-4 py-2 rounded-full text-sm"
                           >
                             {tag}
                           </Badge>
@@ -406,23 +421,23 @@ export default function NotesPage() {
                     )}
                 </CardHeader>
 
-                <CardContent className="p-6 h-full">
+                <CardContent className="p-8 h-full">
                   {isEditing ? (
                     <Textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
-                      placeholder="Start writing your note..."
-                      className="w-full h-full resize-none text-base leading-relaxed 
-             bg-white/80 backdrop-blur-sm border border-muted shadow-inner 
-             focus:ring-2 focus:ring-primary focus:border-primary 
-             transition-smooth rounded-md p-4 placeholder:text-gray-500"
+                      placeholder="Begin crafting your masterpiece..."
+                      className="w-full h-full resize-none text-lg leading-relaxed font-sans
+             bg-white/70 backdrop-blur-md border-0 shadow-inner 
+             focus:ring-2 focus:ring-primary/50 focus:bg-white/80
+             transition-smooth rounded-xl p-6 placeholder:text-muted-foreground/60"
                     />
                   ) : (
                     <div className="h-full overflow-y-auto">
-                      <div className="whitespace-pre-wrap text-base leading-relaxed">
+                      <div className="whitespace-pre-wrap text-lg leading-relaxed font-sans text-foreground/90">
                         {selectedNote.content || (
-                          <span className="text-muted-foreground italic">
-                            This note is empty. Click Edit to add content.
+                          <span className="text-muted-foreground italic text-xl font-display">
+                            This canvas awaits your inspiration. Click Edit to begin creating.
                           </span>
                         )}
                       </div>
@@ -431,25 +446,24 @@ export default function NotesPage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-200px)]">
+              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)] animate-scale-in">
                 <CardContent className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                      <FileText className="h-12 w-12 text-white" />
+                  <div className="text-center animate-fade-in">
+                    <div className="w-32 h-32 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-8 shadow-luxury animate-float">
+                      <FileText className="h-16 w-16 text-white drop-shadow-lg" />
                     </div>
-                    <h3 className="text-2xl font-bold mb-2">
-                      Select a note to view
+                    <h3 className="text-4xl font-display font-bold mb-4 text-foreground">
+                      Choose Your Canvas
                     </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Choose a note from the sidebar or create a new one to get
-                      started.
+                    <p className="text-xl text-muted-foreground mb-8 font-sans leading-relaxed max-w-md mx-auto">
+                      Select a note from your collection or create a new masterpiece to begin your creative journey.
                     </p>
                     <Button
                       onClick={createNewNote}
-                      className="bg-gradient-primary hover:opacity-90"
+                      className="bg-gradient-primary hover:opacity-90 shadow-glow font-sans font-medium text-lg px-8 py-4 rounded-xl transition-spring"
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create New Note
+                      <Plus className="h-6 w-6 mr-3" />
+                      Create New Masterpiece
                     </Button>
                   </div>
                 </CardContent>
