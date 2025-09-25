@@ -37,7 +37,7 @@ const AuthPage: React.FC = () => {
     return <Navigate to="/notes" replace />;
   }
   return (
-    <div className="min-h-screen flex items-center justify-center background-image">
+    <div className="min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-md shadow-elegant">
         <CardHeader>
           <CardTitle className="text-2xl text-center">

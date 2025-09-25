@@ -41,8 +41,11 @@
   color: #888;
 }
 
-.background-image {
-  background-image: url('../public/login-page-image.jpg');
+/* In your globals.css or main.css file */
+
+.bg-image-background {
+  background-image: url('/login-page-image.jpg');
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
 }

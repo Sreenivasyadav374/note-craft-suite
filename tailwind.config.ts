@@ -18,6 +18,10 @@ export default {
 			}
 		},
 		extend: {
+			backgroundImage: {
+				'hero-pattern': "url('/login-page-image.jpg')",
+				// Add other background images here
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -64,11 +68,11 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
-			backgroundImage: {
-				'gradient-primary': 'var(--gradient-primary)',
-				'gradient-hero': 'var(--gradient-hero)',
-				'gradient-card': 'var(--gradient-card)'
-			},
+			// backgroundImage: {
+			// 	'gradient-primary': 'var(--gradient-primary)',
+			// 	'gradient-hero': 'var(--gradient-hero)',
+			// 	'gradient-card': 'var(--gradient-card)'
+			// },
 			boxShadow: {
 				'elegant': 'var(--shadow-elegant)',
 				'glow': 'var(--shadow-glow)',
