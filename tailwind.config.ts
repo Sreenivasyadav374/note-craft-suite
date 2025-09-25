@@ -19,7 +19,7 @@ export default {
 		},
 		extend: {
 			backgroundImage: {
-				'hero-pattern': "url('/login-page-image.jpg')",
+				'hero-pattern': "url('/background.jpg')",
 				// Add other background images here
 			},
 			colors: {

@@ -1,24 +1,23 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthContext } from '../context/AuthContext';
-import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation,Navigate } from 'react-router-dom';
 
-// Dynamically load the Spline viewer script only once
-function useSplineScript() {
-  useEffect(() => {
-    if (!document.querySelector('script[data-spline-viewer]')) {
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.src = 'https://unpkg.com/@splinetool/viewer@1.10.36/build/spline-viewer.js';
-      script.setAttribute('data-spline-viewer', 'true');
-      document.body.appendChild(script);
-    }
-  }, []);
-}
+// // Dynamically load the Spline viewer script only once
+// function useSplineScript() {
+//   useEffect(() => {
+//     if (!document.querySelector('script[data-spline-viewer]')) {
+//       const script = document.createElement('script');
+//       script.type = 'module';
+//       script.src = 'https://unpkg.com/@splinetool/viewer@1.10.36/build/spline-viewer.js';
+//       script.setAttribute('data-spline-viewer', 'true');
+//       document.body.appendChild(script);
+//     }
+//   }, []);
+// }
 
+
+//   useSplineScript();
 export default function AuthPage() {
-  // Call the hook here to ensure the script is loaded
-  useSplineScript();
-
   const { register, login, error, loading, isAuthenticated } = useAuthContext();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +25,7 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  if (isAuthenticated) {
+   if (isAuthenticated) {
     return <Navigate to="/notes" replace />;
   }
 
@@ -34,21 +33,22 @@ export default function AuthPage() {
     e.preventDefault();
     if (mode === 'login') {
       await login(username, password);
+      //navigate('/notes', { replace: true });
     } else {
       await register(username, password);
     }
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-end overflow-hidden">
+    <div className="relative min-h-screen w-full flex items-center justify-end overflow-hidden bg-hero-pattern bg-cover bg-no-repeat">
       {/* Fullscreen Spline 3D Viewer as background */}
-      <div className="absolute inset-0 w-full h-full z-0">
+      {/* <div className="absolute inset-0 w-full h-full z-0">
         <spline-viewer
           url="https://prod.spline.design/CtOm6IUSxT5Ztq6n/scene.splinecode"
           style={{ width: '100vw', height: '100vh', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
         />
         <div className="absolute inset-0 bg-black/40" />
-      </div>
+      </div> */}
       {/* Login/Register Form Overlay - right side */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-md mr-12 lg:mr-24 xl:mr-32">
         <div
