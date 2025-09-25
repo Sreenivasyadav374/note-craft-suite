@@ -40,81 +40,106 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-end overflow-hidden bg-hero-pattern bg-cover bg-no-repeat">
-      {/* Animated floating elements */}
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-luxury">
+      {/* Animated luxury background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-primary rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-[float_6s_ease-in-out_infinite]"></div>
-        <div className="absolute top-40 right-40 w-96 h-96 bg-gradient-primary rounded-full mix-blend-multiply filter blur-xl opacity-15 animate-[float_8s_ease-in-out_infinite_reverse]"></div>
-        <div className="absolute bottom-32 left-32 w-80 h-80 bg-gradient-hero rounded-full mix-blend-multiply filter blur-xl opacity-25 animate-[float_7s_ease-in-out_infinite_0.5s]"></div>
+        {/* Main luxury gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-hero opacity-90"></div>
         
-        {/* Animated particles */}
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary rounded-full animate-pulse opacity-60"></div>
-        <div className="absolute top-3/4 left-1/3 w-1 h-1 bg-primary rounded-full animate-ping opacity-40"></div>
-        <div className="absolute top-2/3 right-1/4 w-3 h-3 bg-primary rounded-full animate-bounce opacity-30"></div>
+        {/* Floating luxury orbs */}
+        <div className="absolute top-20 left-20 w-96 h-96 bg-gradient-to-r from-primary-glow/20 to-primary-accent/20 rounded-full mix-blend-multiply filter blur-3xl animate-[float_8s_ease-in-out_infinite]"></div>
+        <div className="absolute top-40 right-40 w-80 h-80 bg-gradient-to-l from-primary-accent/15 to-primary-glow/15 rounded-full mix-blend-multiply filter blur-2xl animate-[float_10s_ease-in-out_infinite_reverse]"></div>
+        <div className="absolute bottom-32 left-32 w-72 h-72 bg-gradient-to-br from-primary-glow/25 to-primary-accent/10 rounded-full mix-blend-multiply filter blur-3xl animate-[float_9s_ease-in-out_infinite_1s]"></div>
         
-        {/* Grid overlay with animation */}
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-primary/5 to-transparent animate-pulse"></div>
+        {/* Luxury mesh gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-accent/5 via-transparent to-primary-glow/5"></div>
+        
+        {/* Animated luxury particles */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary-accent rounded-full animate-pulse opacity-60"></div>
+        <div className="absolute top-3/4 left-1/3 w-1 h-1 bg-primary-glow rounded-full animate-ping opacity-40"></div>
+        <div className="absolute top-2/3 right-1/4 w-3 h-3 bg-primary-accent rounded-full animate-bounce opacity-30"></div>
       </div>
 
-      {/* Login/Register Form Overlay - right side with entrance animation */}
-      <div className="relative z-10 flex flex-col items-center w-full max-w-md mr-12 lg:mr-24 xl:mr-32 animate-fade-in"
-           style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
-        <div
-          className="max-w-sm w-full p-6 rounded-2xl glass-form transition-all duration-500 shadow-elegant border border-gray-900/80 hover:-translate-y-2 hover:scale-[1.03] hover:shadow-glow backdrop-blur-xl animate-scale-in"
-          style={{
-            background: 'rgba(30, 30, 30, 0.22)',
-            boxShadow: '0 12px 40px 0 rgba(0,0,0,0.55), 0 1.5px 8px 0 rgba(80,80,80,0.18)',
-            backdropFilter: 'blur(18px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(18px) saturate(180%)',
-            border: '1.5px solid rgba(30,30,30,0.5)',
-            animationDelay: '0.6s',
-            animationFillMode: 'both'
-          }}
-        >
-          <h2 className="text-3xl font-extrabold mb-6 text-center bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg tracking-tight">
-            {mode === 'login' ? 'Login' : 'Register'}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              className="w-full border border-gray-800 bg-gradient-to-r from-black via-gray-800 to-gray-900 placeholder:text-gray-400 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-700 font-medium text-base shadow-md backdrop-blur text-white"
-              placeholder="Username"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              autoComplete="username"
-            />
-            <input
-              className="w-full border border-gray-800 bg-gradient-to-r from-black via-gray-800 to-gray-900 placeholder:text-gray-400 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-700 font-medium text-base shadow-md backdrop-blur text-white"
-              placeholder="Password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-            {error && <div className="text-red-500 font-semibold text-center text-sm mb-2">{error}</div>}
+      {/* Premium Auth Card */}
+      <div className="relative z-10 w-full max-w-md animate-fade-in"
+           style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
+        <div className="w-full p-8 rounded-3xl bg-card/95 backdrop-blur-2xl border border-border/20 shadow-luxury transition-all duration-700 hover:shadow-glow hover:scale-[1.02] animate-scale-in"
+             style={{
+               animationDelay: '0.5s',
+               animationFillMode: 'both',
+               background: 'rgba(255, 255, 255, 0.95)',
+               backdropFilter: 'blur(20px) saturate(180%)',
+               WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+             }}>
+          
+          {/* Luxury Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-display font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent tracking-tight">
+              {mode === 'login' ? 'Welcome Back' : 'Join Us'}
+            </h1>
+            <p className="text-muted-foreground font-medium">
+              {mode === 'login' ? 'Sign in to your account' : 'Create your luxury account'}
+            </p>
+          </div>
+
+          {/* Premium Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <input
+                  className="w-full h-12 px-4 bg-input/50 border border-border/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent placeholder:text-muted-foreground font-medium text-sm transition-all duration-300 hover:border-border/50"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  autoComplete="username"
+                />
+              </div>
+              <div>
+                <input
+                  className="w-full h-12 px-4 bg-input/50 border border-border/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent placeholder:text-muted-foreground font-medium text-sm transition-all duration-300 hover:border-border/50"
+                  placeholder="Enter your password"
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium text-center">
+                {error}
+              </div>
+            )}
+
             <button
-              className="w-full py-2 rounded-lg font-bold text-lg bg-gradient-to-r from-black via-gray-800 to-gray-900 text-white shadow-lg hover:scale-[1.03] hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-700/60"
+              className="w-full h-12 rounded-xl font-semibold text-base bg-gradient-primary text-primary-foreground shadow-elegant hover:shadow-glow hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-accent disabled:opacity-50 disabled:cursor-not-allowed"
               type="submit"
               disabled={loading}
             >
-              {loading ? 'Loading...' : mode === 'login' ? 'Login' : 'Register'}
+              {loading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>Please wait...</span>
+                </div>
+              ) : (
+                mode === 'login' ? 'Sign In' : 'Create Account'
+              )}
             </button>
           </form>
-          <div className="mt-6 text-center">
-            {mode === 'login' ? (
-              <button
-                className="font-semibold text-base text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text hover:underline hover:opacity-80 transition-all duration-150"
-                onClick={() => setMode('register')}
-              >
-                Need an account? Register
-              </button>
-            ) : (
-              <button
-                className="font-semibold text-base text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text hover:underline hover:opacity-80 transition-all duration-150"
-                onClick={() => setMode('login')}
-              >
-                Already have an account? Login
-              </button>
-            )}
+
+          {/* Switch Mode */}
+          <div className="mt-8 text-center">
+            <button
+              className="font-medium text-sm text-muted-foreground hover:text-primary-accent transition-colors duration-200"
+              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+            >
+              {mode === 'login' ? (
+                <>Don't have an account? <span className="text-primary-accent font-semibold">Sign up</span></>
+              ) : (
+                <>Already have an account? <span className="text-primary-accent font-semibold">Sign in</span></>
+              )}
+            </button>
           </div>
         </div>
       </div>

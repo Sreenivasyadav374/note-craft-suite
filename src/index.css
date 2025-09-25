@@ -6,56 +6,59 @@
 
 @layer base {
   :root {
-    /* Base colors - Clean black and white */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 9%;
+    /* Base colors - Luxury light theme */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 5%;
 
-    /* Card colors */
+    /* Card colors - Premium white with subtle warmth */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    --card-foreground: 0 0% 5%;
 
     /* Popover colors */
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover-foreground: 0 0% 5%;
 
-    /* Primary - Pure black */
-    --primary: 0 0% 9%;
+    /* Primary - Deep charcoal with gold accent */
+    --primary: 0 0% 8%;
     --primary-foreground: 0 0% 98%;
-    --primary-glow: 0 0% 20%;
+    --primary-glow: 45 100% 70%;
+    --primary-accent: 45 100% 50%;
 
-    /* Secondary - Light gray */
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 9%;
+    /* Secondary - Warm neutral */
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 8%;
 
     /* Muted colors */
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 40%;
 
-    /* Accent colors */
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 9%;
+    /* Accent colors - Gold luxury accent */
+    --accent: 45 100% 95%;
+    --accent-foreground: 0 0% 8%;
 
     /* Destructive colors */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Border and input */
-    --border: 0 0% 89%;
-    --input: 0 0% 89%;
-    --ring: 0 0% 9%;
+    /* Border and input - Subtle luxury borders */
+    --border: 0 0% 85%;
+    --input: 0 0% 92%;
+    --ring: 45 100% 50%;
 
     /* Design tokens */
-    --radius: 0.75rem;
+    --radius: 1rem;
     
-    /* Gradients - Black and white gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 9%), hsl(0 0% 20%));
-    --gradient-hero: linear-gradient(135deg, hsl(0 0% 9%), hsl(0 0% 20%), hsl(0 0% 30%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(0 0% 98%));
+    /* Luxury Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(0 0% 8%), hsl(0 0% 15%), hsl(45 100% 10%));
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 5%), hsl(0 0% 15%), hsl(45 100% 8%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(0 0% 98%), hsl(45 100% 98%));
+    --gradient-luxury: linear-gradient(135deg, hsl(45 100% 95%), hsl(0 0% 98%), hsl(45 100% 92%));
     
-    /* Shadows */
-    --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.1);
-    --shadow-glow: 0 0 40px hsl(0 0% 0% / 0.15);
-    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.15);
+    /* Premium Shadows */
+    --shadow-elegant: 0 20px 50px -12px hsl(0 0% 0% / 0.25);
+    --shadow-glow: 0 0 60px hsl(45 100% 50% / 0.15);
+    --shadow-card: 0 8px 32px -8px hsl(0 0% 0% / 0.12);
+    --shadow-luxury: 0 25px 60px -15px hsl(0 0% 0% / 0.3);
     
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -73,53 +76,56 @@
   }
 
   .dark {
-    /* Base colors - Pure black and white for dark mode */
-    --background: 0 0% 6%;
-    --foreground: 0 0% 98%;
+    /* Base colors - Luxury dark theme */
+    --background: 0 0% 3%;
+    --foreground: 0 0% 95%;
 
-    /* Card colors */
-    --card: 0 0% 9%;
-    --card-foreground: 0 0% 98%;
+    /* Card colors - Deep luxury black */
+    --card: 0 0% 6%;
+    --card-foreground: 0 0% 95%;
 
     /* Popover colors */
-    --popover: 0 0% 9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 95%;
 
-    /* Primary - Pure white for dark mode */
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --primary-glow: 0 0% 80%;
+    /* Primary - Luxury gold/white */
+    --primary: 45 100% 85%;
+    --primary-foreground: 0 0% 8%;
+    --primary-glow: 45 100% 70%;
+    --primary-accent: 45 100% 60%;
 
     /* Secondary */
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 95%;
 
     /* Muted colors */
-    --muted: 0 0% 14%;
+    --muted: 0 0% 10%;
     --muted-foreground: 0 0% 65%;
 
-    /* Accent colors */
-    --accent: 0 0% 14%;
-    --accent-foreground: 0 0% 98%;
+    /* Accent colors - Gold luxury */
+    --accent: 45 100% 10%;
+    --accent-foreground: 45 100% 85%;
 
     /* Destructive colors */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
     /* Border and input */
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 0% 98%;
+    --border: 0 0% 15%;
+    --input: 0 0% 12%;
+    --ring: 45 100% 60%;
     
-    /* Gradients for dark mode - Black and white */
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 98%), hsl(0 0% 80%));
-    --gradient-hero: linear-gradient(135deg, hsl(0 0% 98%), hsl(0 0% 80%), hsl(0 0% 60%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 9%), hsl(0 0% 6%));
+    /* Luxury Dark Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(45 100% 85%), hsl(45 100% 70%), hsl(45 100% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 6%), hsl(0 0% 12%), hsl(45 100% 8%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 6%), hsl(0 0% 9%), hsl(45 100% 5%));
+    --gradient-luxury: linear-gradient(135deg, hsl(45 100% 5%), hsl(0 0% 6%), hsl(45 100% 8%));
     
-    /* Dark mode shadows */
-    --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 40px hsl(0 0% 100% / 0.1);
-    --shadow-card: 0 4px 20px -4px hsl(0 0% 0% / 0.4);
+    /* Premium Dark Shadows */
+    --shadow-elegant: 0 25px 60px -15px hsl(0 0% 0% / 0.6);
+    --shadow-glow: 0 0 80px hsl(45 100% 60% / 0.2);
+    --shadow-card: 0 12px 40px -10px hsl(0 0% 0% / 0.5);
+    --shadow-luxury: 0 30px 80px -20px hsl(0 0% 0% / 0.7);
 
     /* Sidebar */
     --sidebar-background: 0 0% 6%;
