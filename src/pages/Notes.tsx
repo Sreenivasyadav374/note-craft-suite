@@ -180,37 +180,42 @@ export default function NotesPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-hero border-b shadow-elegant relative overflow-hidden">
-        {/* Floating orbs */}
+
         <div className="absolute top-0 left-0 w-72 h-72 bg-primary-glow/20 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '-3s' }}></div>
-        
-        <div className="container mx-auto px-6 py-12 relative z-10">
+
+        <div
+          className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float"
+          style={{ animationDelay: "-3s" }}
+        ></div>
+        <div className="container mx-auto px-6 py-4 relative z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 animate-fade-in">
-              <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20 shadow-luxury">
-                <FileText className="h-10 w-10 text-white drop-shadow-lg" />
+              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 shadow-luxury"> 
+                <FileText className="h-8 w-8 text-white drop-shadow-lg" />
               </div>
               <div>
-                <h1 className="text-5xl font-display font-bold text-white mb-2 tracking-tight">
+                <h1 className="text-3xl font-display font-bold text-white mb-1 tracking-tight">
                   Premium Notes
                 </h1>
-                <p className="text-xl text-white/90 font-sans">
-                  Luxury note-taking reimagined
+                <p className="text-base text-white/90 font-sans">Luxury note-taking reimagined
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div
+              className="flex items-center gap-4 animate-fade-in"
+              style={{ animationDelay: "0.2s" }}
+            >
               <Button
                 type="button"
                 onClick={createNewNote}
-                className="bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md transition-spring shadow-luxury font-sans text-lg px-8 py-3 rounded-xl"
+                className="bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md transition-spring shadow-luxury font-sans px-6 py-2 rounded-xl text-sm"
                 size="lg"
                 disabled={loadingAction === "create"}
               >
                 {loadingAction === "create" ? (
-                  <Spinner className="h-5 w-5 mr-3" />
+                  <Spinner className="h-4 w-4 mr-2" />
                 ) : (
-                  <Plus className="h-5 w-5 mr-3" />
+                  <Plus className="h-4 w-4 mr-2" />
                 )}
                 New Note
               </Button>
@@ -220,14 +225,14 @@ export default function NotesPage() {
                   logout();
                   setTimeout(() => setLoadingAction(null), 1000);
                 }}
-                className="bg-red-600/80 hover:bg-red-600 text-white border border-red-500/30 backdrop-blur-md transition-spring shadow-luxury font-sans text-lg px-8 py-3 rounded-xl"
+                className="bg-red-600/80 hover:bg-red-600 text-white border border-red-500/30 backdrop-blur-md transition-spring shadow-luxury font-sans px-6 py-2 rounded-xl text-sm"
                 size="lg"
                 disabled={loadingAction === "logout"}
               >
                 {loadingAction === "logout" ? (
-                  <Spinner className="h-5 w-5 mr-3" />
+                  <Spinner className="h-4 w-4 mr-2" />
                 ) : null}
-                Sign Out
+               Sign Out
               </Button>
             </div>
           </div>
@@ -237,7 +242,10 @@ export default function NotesPage() {
       <div className="container mx-auto px-6 py-10">
         <div className="grid lg:grid-cols-3 gap-10">
           {/* Sidebar - Notes List */}
-          <div className="lg:col-span-1 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div
+            className="lg:col-span-1 animate-fade-in"
+            style={{ animationDelay: "0.3s" }}
+          >
             <div className="mb-8">
               <h2 className="text-2xl font-display font-semibold mb-4 text-foreground">
                 Your Collection
@@ -253,13 +261,15 @@ export default function NotesPage() {
               </div>
             </div>
 
-            <div className="space-y-5 max-h-[calc(100vh-340px)] overflow-y-auto">
+            <div className="space-y-5 max-h-[calc(100vh-340px)] overflow-y-auto overflow-x-hidden">
               {filteredNotes.length === 0 ? (
-                <Card className="shadow-card border-0 bg-gradient-card animate-scale-in">
+                <Card className="shadow-card border-0 bg-gradient-card animate-scale-in min-h-[280px]">
                   <CardContent className="p-8 text-center">
                     <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-6 opacity-60" />
                     <h3 className="text-xl font-display font-semibold mb-2 text-foreground">
-                      {notes.length === 0 ? "Begin Your Journey" : "No Results Found"}
+                      {notes.length === 0
+                        ? "Begin Your Journey"
+                        : "No Results Found"}
                     </h3>
                     <p className="text-muted-foreground font-sans">
                       {notes.length === 0
@@ -319,17 +329,21 @@ export default function NotesPage() {
                             </Badge>
                           ))}
                           {note.tags.length > 3 && (
-                            <Badge variant="secondary" className="text-xs font-sans px-3 py-1 rounded-full bg-primary/10 text-primary border-0">
+                            <Badge
+                              variant="secondary"
+                              className="text-xs font-sans px-3 py-1 rounded-full bg-primary/10 text-primary border-0"
+                            >
                               +{note.tags.length - 3}
                             </Badge>
                           )}
                         </div>
                       )}
                       <p className="text-sm text-muted-foreground font-sans font-medium">
-                        Last edited: {note.updatedAt.toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
+                        Last edited:{" "}
+                        {note.updatedAt.toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
                         })}
                       </p>
                     </CardContent>
@@ -340,7 +354,10 @@ export default function NotesPage() {
           </div>
 
           {/* Main Content - Note Editor */}
-          <div className="lg:col-span-2 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <div
+            className="lg:col-span-2 animate-fade-in"
+            style={{ animationDelay: "0.5s" }}
+          >
             {selectedNote ? (
               <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)] animate-scale-in">
                 <CardHeader className="border-b bg-white/30 backdrop-blur-md p-8">
@@ -437,7 +454,8 @@ export default function NotesPage() {
                       <div className="whitespace-pre-wrap text-lg leading-relaxed font-sans text-foreground/90">
                         {selectedNote.content || (
                           <span className="text-muted-foreground italic text-xl font-display">
-                            This canvas awaits your inspiration. Click Edit to begin creating.
+                            This canvas awaits your inspiration. Click Edit to
+                            begin creating.
                           </span>
                         )}
                       </div>
@@ -456,7 +474,8 @@ export default function NotesPage() {
                       Choose Your Canvas
                     </h3>
                     <p className="text-xl text-muted-foreground mb-8 font-sans leading-relaxed max-w-md mx-auto">
-                      Select a note from your collection or create a new masterpiece to begin your creative journey.
+                      Select a note from your collection or create a new
+                      masterpiece to begin your creative journey.
                     </p>
                     <Button
                       onClick={createNewNote}
