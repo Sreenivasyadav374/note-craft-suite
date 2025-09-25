@@ -41,24 +41,34 @@ export default function AuthPage() {
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-end overflow-hidden bg-hero-pattern bg-cover bg-no-repeat">
-      {/* Fullscreen Spline 3D Viewer as background */}
-      {/* <div className="absolute inset-0 w-full h-full z-0">
-        <spline-viewer
-          url="https://prod.spline.design/CtOm6IUSxT5Ztq6n/scene.splinecode"
-          style={{ width: '100vw', height: '100vh', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }}
-        />
-        <div className="absolute inset-0 bg-black/40" />
-      </div> */}
-      {/* Login/Register Form Overlay - right side */}
-      <div className="relative z-10 flex flex-col items-center w-full max-w-md mr-12 lg:mr-24 xl:mr-32">
+      {/* Animated floating elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-primary rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-[float_6s_ease-in-out_infinite]"></div>
+        <div className="absolute top-40 right-40 w-96 h-96 bg-gradient-primary rounded-full mix-blend-multiply filter blur-xl opacity-15 animate-[float_8s_ease-in-out_infinite_reverse]"></div>
+        <div className="absolute bottom-32 left-32 w-80 h-80 bg-gradient-hero rounded-full mix-blend-multiply filter blur-xl opacity-25 animate-[float_7s_ease-in-out_infinite_0.5s]"></div>
+        
+        {/* Animated particles */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary rounded-full animate-pulse opacity-60"></div>
+        <div className="absolute top-3/4 left-1/3 w-1 h-1 bg-primary rounded-full animate-ping opacity-40"></div>
+        <div className="absolute top-2/3 right-1/4 w-3 h-3 bg-primary rounded-full animate-bounce opacity-30"></div>
+        
+        {/* Grid overlay with animation */}
+        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-primary/5 to-transparent animate-pulse"></div>
+      </div>
+
+      {/* Login/Register Form Overlay - right side with entrance animation */}
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md mr-12 lg:mr-24 xl:mr-32 animate-fade-in"
+           style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
         <div
-          className="max-w-sm w-full p-6 rounded-2xl glass-form transition-transform duration-300 shadow-3d border border-gray-900/80 hover:-translate-y-2 hover:scale-[1.03] hover:shadow-3d-lg"
+          className="max-w-sm w-full p-6 rounded-2xl glass-form transition-all duration-500 shadow-elegant border border-gray-900/80 hover:-translate-y-2 hover:scale-[1.03] hover:shadow-glow backdrop-blur-xl animate-scale-in"
           style={{
             background: 'rgba(30, 30, 30, 0.22)',
             boxShadow: '0 12px 40px 0 rgba(0,0,0,0.55), 0 1.5px 8px 0 rgba(80,80,80,0.18)',
             backdropFilter: 'blur(18px) saturate(180%)',
             WebkitBackdropFilter: 'blur(18px) saturate(180%)',
             border: '1.5px solid rgba(30,30,30,0.5)',
+            animationDelay: '0.6s',
+            animationFillMode: 'both'
           }}
         >
           <h2 className="text-3xl font-extrabold mb-6 text-center bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent drop-shadow-lg tracking-tight">
