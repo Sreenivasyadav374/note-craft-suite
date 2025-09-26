@@ -362,13 +362,15 @@ export default function NotesPage() {
               <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)] animate-scale-in">
                 <CardHeader className="border-b bg-white/30 backdrop-blur-md p-8">
                   <div className="flex items-center justify-between">
-                    {isEditing ? (
-                      <Input
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="text-3xl font-display font-bold border-0 bg-transparent p-0 focus:ring-0 placeholder:text-muted-foreground/50"
-                        placeholder="Enter your note title..."
-                      />
+                  {isEditing ? (
+                      <div className="flex-1 mr-4">
+                        <Input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="text-3xl font-display font-bold bg-white/20 backdrop-blur-md border border-white/30 rounded-xl px-6 py-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-smooth placeholder:text-muted-foreground/50 shadow-card"
+                          placeholder="Enter your note title..."
+                        />
+                      </div>
                     ) : (
                       <CardTitle className="text-3xl font-display font-bold text-foreground leading-tight">
                         {selectedNote.title}
@@ -412,12 +414,17 @@ export default function NotesPage() {
 
                   {isEditing && (
                     <div className="mt-6">
-                      <Input
-                        value={editTags}
-                        onChange={(e) => setEditTags(e.target.value)}
-                        placeholder="Add tags (comma separated)..."
-                        className="border-0 bg-transparent text-lg font-sans placeholder:text-muted-foreground/60 p-0"
-                      />
+                      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-card">
+                        <label className="block text-sm font-sans font-medium text-foreground/80 mb-2">
+                          Tags
+                        </label>
+                        <Input
+                          value={editTags}
+                          onChange={(e) => setEditTags(e.target.value)}
+                          placeholder="Add tags (comma separated)..."
+                          className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-4 py-3 text-lg font-sans placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-smooth"
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -440,15 +447,17 @@ export default function NotesPage() {
 
                 <CardContent className="p-8 h-full">
                   {isEditing ? (
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      placeholder="Begin crafting your masterpiece..."
-                      className="w-full h-full resize-none text-lg leading-relaxed font-sans
-             bg-white/70 backdrop-blur-md border-0 shadow-inner 
-             focus:ring-2 focus:ring-primary/50 focus:bg-white/80
-             transition-smooth rounded-xl p-6 placeholder:text-muted-foreground/60"
-                    />
+                    <div className="h-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-card">
+                      <label className="block text-sm font-sans font-medium text-foreground/80 mb-3">
+                        Content
+                      </label>
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        placeholder="Begin crafting your masterpiece..."
+                        className="w-full h-[calc(100%-60px)] resize-none text-lg leading-relaxed font-sans bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-smooth placeholder:text-muted-foreground/60 shadow-inner"
+                      />
+                    </div>
                   ) : (
                     <div className="h-full overflow-y-auto">
                       <div className="whitespace-pre-wrap text-lg leading-relaxed font-sans text-foreground/90">
