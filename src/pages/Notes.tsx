@@ -360,7 +360,7 @@ export default function NotesPage() {
             style={{ animationDelay: "0.5s" }}
           >
             {selectedNote ? (
-              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)] animate-scale-in">
+              <Card className="shadow-elegant border-0 bg-gradient-card animate-scale-in">
                 <CardHeader className="border-b bg-white/30 backdrop-blur-md p-8">
                   <div className="flex items-center justify-between">
                   {isEditing ? (
