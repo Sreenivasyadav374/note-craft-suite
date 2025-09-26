@@ -1,6 +1,11 @@
 import { useAuthContext } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
 
+// Define the dynamic API base URL
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? "/api" // Production: Vercel rewrite handles /api
+  : "http://localhost:4002/api";
+
 export default function ProtectedExample() {
   const { token, isAuthenticated, logout } = useAuthContext();
   const [notes, setNotes] = useState<any[]>([]);
@@ -10,7 +15,7 @@ export default function ProtectedExample() {
   useEffect(() => {
     if (!isAuthenticated) return;
     setLoading(true);
-    fetch('http://localhost:4000/api/notes', {
+    fetch(API_URL, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => res.json())
