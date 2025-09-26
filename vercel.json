@@ -5,23 +5,17 @@
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "outputDirectory": "dist",
+        "distDir": "dist",
         "buildCommand": "cd frontend && npm run build"
       }
     },
     {
-      "src": "backend/index.ts",
+      "src": "backend/dist/index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/backend/index.ts"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/dist/index.html"
-    }
+    { "src": "/api/(.*)", "dest": "/backend/dist/index.js" },
+    { "src": "/(.*)", "dest": "/frontend/dist/index.html" }
   ]
 }
