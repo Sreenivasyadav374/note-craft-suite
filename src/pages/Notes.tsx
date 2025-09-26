@@ -261,8 +261,9 @@ export default function NotesPage() {
               </div>
             </div>
 
-            <div className="space-y-5 max-h-[calc(100vh-340px)] overflow-y-auto overflow-x-hidden">
-              {filteredNotes.length === 0 ? (
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-card">
+              <div className="space-y-5 max-h-[calc(100vh-380px)] overflow-y-auto overflow-x-hidden">
+                {filteredNotes.length === 0 ? (
                 <Card className="shadow-card border-0 bg-gradient-card animate-scale-in min-h-[280px]">
                   <CardContent className="p-8 text-center">
                     <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-6 opacity-60" />
@@ -350,6 +351,7 @@ export default function NotesPage() {
                   </Card>
                 ))
               )}
+              </div>
             </div>
           </div>
 
