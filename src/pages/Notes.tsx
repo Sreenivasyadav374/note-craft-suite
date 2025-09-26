@@ -187,10 +187,10 @@ export default function NotesPage() {
           className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float"
           style={{ animationDelay: "-3s" }}
         ></div>
-        <div className="container mx-auto px-6 py-4 relative z-10">
+        <div className="container mx-auto px-6 py-1 relative z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 animate-fade-in">
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 shadow-luxury"> 
+              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 shadow-luxury flex items-center justify-center"> 
                 <FileText className="h-8 w-8 text-white drop-shadow-lg" />
               </div>
               <div>
