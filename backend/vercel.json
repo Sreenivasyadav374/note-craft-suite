@@ -3,14 +3,14 @@
   "name": "note-craft-backend-api",
   "builds": [
     {
-      "src": "index.ts",
+      "src": "index.js",
       "use": "@vercel/node"
     }
   ],
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/index.ts"
+      "destination": "/index.js"
     }
   ]
 }
