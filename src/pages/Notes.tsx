@@ -261,8 +261,8 @@ export default function NotesPage() {
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-card">
-              <div className="space-y-5 max-h-[calc(100vh-380px)] overflow-y-auto overflow-x-hidden">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-card h-[calc(100vh-280px)]">
+              <div className="space-y-3 h-full overflow-y-auto overflow-x-hidden">
                 {filteredNotes.length === 0 ? (
                 <Card className="shadow-card border-0 bg-gradient-card animate-scale-in min-h-[280px]">
                   <CardContent className="p-8 text-center">
@@ -291,9 +291,9 @@ export default function NotesPage() {
                     onClick={() => setSelectedNote(note)}
                     style={{ animationDelay: `${0.4 + index * 0.1}s` }}
                   >
-                    <CardHeader className="pb-4">
+                    <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
-                        <CardTitle className="text-xl font-display font-semibold truncate mr-3 text-foreground leading-tight">
+                        <CardTitle className="text-lg font-display font-semibold truncate mr-3 text-foreground leading-tight">
                           {note.title}
                         </CardTitle>
                         <Button
@@ -303,44 +303,43 @@ export default function NotesPage() {
                             e.stopPropagation();
                             deleteNote(note.id);
                           }}
-                          className="text-muted-foreground hover:text-destructive transition-smooth rounded-lg p-2"
+                          className="text-muted-foreground hover:text-destructive transition-smooth rounded-lg p-1.5 h-auto"
                           disabled={loadingAction === "delete-" + note.id}
                         >
                           {loadingAction === "delete-" + note.id ? (
-                            <Spinner className="h-4 w-4" />
+                            <Spinner className="h-3.5 w-3.5" />
                           ) : (
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           )}
                         </Button>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-base text-muted-foreground line-clamp-3 mb-4 font-sans leading-relaxed">
+                    <CardContent className="pt-0 pb-3">
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3 font-sans leading-relaxed">
                         {note.content || "No content"}
                       </p>
                       {note.tags && note.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {note.tags.slice(0, 3).map((tag, index) => (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {note.tags.slice(0, 2).map((tag, index) => (
                             <Badge
                               key={index}
                               variant="secondary"
-                              className="text-xs font-sans px-3 py-1 rounded-full bg-primary/10 text-primary border-0"
+                              className="text-xs font-sans px-2 py-0.5 rounded-full bg-primary/10 text-primary border-0"
                             >
                               {tag}
                             </Badge>
                           ))}
-                          {note.tags.length > 3 && (
+                          {note.tags.length > 2 && (
                             <Badge
                               variant="secondary"
-                              className="text-xs font-sans px-3 py-1 rounded-full bg-primary/10 text-primary border-0"
+                              className="text-xs font-sans px-2 py-0.5 rounded-full bg-primary/10 text-primary border-0"
                             >
-                              +{note.tags.length - 3}
+                              +{note.tags.length - 2}
                             </Badge>
                           )}
                         </div>
                       )}
-                      <p className="text-sm text-muted-foreground font-sans font-medium">
-                        Last edited:{" "}
+                      <p className="text-xs text-muted-foreground font-sans font-medium">
                         {note.updatedAt.toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
