@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js"
   },
-  "dependencies": {
+"dependencies": {
   "bcryptjs": "^3.0.2",
   "cors": "^2.8.5",
   "crypto": "^1.0.1",
@@ -27,5 +27,6 @@
   "ts-node": "^10.9.2",
   "typescript": "^5.4.5"
 }
+
 
 }
