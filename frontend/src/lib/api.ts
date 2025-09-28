@@ -1,7 +1,7 @@
 // Utility functions for authentication and notes API
 
 const API_URL = process.env.NODE_ENV === 'production' 
-  ? "/api" // ✅ Production: Use relative path for Vercel rewrite
+  ? "https://note-craft-suite-backend.vercel.app/api"
   : "http://localhost:4002/api"; // ✅ Development: Use known local absolute URL
 
   

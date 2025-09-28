@@ -16,11 +16,4 @@
       "dest": "/dist/$1"
     }
   ]
-  ,
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://note-craft-suite-backend.vercel.app/api/:path*"
-    }
-  ]
 }
