@@ -53,6 +53,9 @@ app.use(async (req, res, next) => {
 app.use('/api/auth', auth_1.default);
 // Maps to: /api/notes
 app.use('/api/notes', notes_1.default);
+app.get("/", (req, res) => {
+    res.json({ status: "Backend running ✅", version: "1.0.0" });
+});
 // --- Serverless Export & Local Execution ---
 // MANDATORY: Export the app instance for Vercel's serverless function handler.
 exports.default = app;

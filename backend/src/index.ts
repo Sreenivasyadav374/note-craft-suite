@@ -62,6 +62,11 @@ app.use('/api/auth', authRoutes);
 // Maps to: /api/notes
 app.use('/api/notes', notesRoutes);
 
+app.get("/", (req, res) => {
+  res.json({ status: "Backend running ✅", version: "1.0.0" });
+});
+
+
 // --- Serverless Export & Local Execution ---
 
 // MANDATORY: Export the app instance for Vercel's serverless function handler.
