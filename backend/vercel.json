@@ -3,19 +3,14 @@
   "name": "note-craft-backend-api",
   "builds": [
     {
-      "src": "index.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": [
-          "dist/**"
-        ]
-      }
+      "src": "dist/index.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/dist/index.js"
+      "dest": "dist/index.js" 
     }
   ],
   "installCommand": "npm install && npm run build" 
