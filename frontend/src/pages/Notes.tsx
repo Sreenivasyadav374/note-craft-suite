@@ -6,7 +6,7 @@ import {
   updateNote,
   deleteNote as deleteNoteApi,
 } from "../lib/api";
-import { Search, Plus, FileText, Trash2, Edit3, Save, X } from "lucide-react";
+import { Search, Plus, FileText, Trash2, Edit3, Save, X, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import ProfileDrawer from "@/components/ProfileDrawer";
 
 export default function NotesPage() {
   const [notes, setNotes] = useState([]);
@@ -28,6 +29,7 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -178,6 +180,7 @@ export default function NotesPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ProfileDrawer open={profileDrawerOpen} onOpenChange={setProfileDrawerOpen} />
       {/* Header */}
       <header className="bg-gradient-hero border-b shadow-elegant relative overflow-hidden">
 
@@ -220,19 +223,11 @@ export default function NotesPage() {
                 New Note
               </Button>
               <Button
-                onClick={() => {
-                  setLoadingAction("logout");
-                  logout();
-                  setTimeout(() => setLoadingAction(null), 1000);
-                }}
-                className="bg-red-600/80 hover:bg-red-600 text-white border border-red-500/30 backdrop-blur-md transition-spring shadow-luxury font-sans px-6 py-2 rounded-xl text-sm"
+                onClick={() => setProfileDrawerOpen(true)}
+                className="bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md transition-spring shadow-luxury font-sans px-4 py-2 rounded-xl text-sm"
                 size="lg"
-                disabled={loadingAction === "logout"}
               >
-                {loadingAction === "logout" ? (
-                  <Spinner className="h-4 w-4 mr-2" />
-                ) : null}
-               Sign Out
+                <UserCircle className="h-5 w-5" />
               </Button>
             </div>
           </div>
