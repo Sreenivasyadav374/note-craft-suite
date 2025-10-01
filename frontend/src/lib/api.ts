@@ -51,14 +51,21 @@ export async function createNote(token: string, title: string, content: string) 
   return res.json();
 }
 
-export async function updateNote(token: string, id: string, title: string, content: string) {
+export async function updateNote(
+  token: string, 
+  id: string, 
+  title: string, 
+  content: string, 
+  tags?: string[] // <-- Added tags argument (optional)
+) {
   const res = await fetch(`${API_URL}/notes/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
     },
-    body: JSON.stringify({ title, content })
+    // The request body now includes 'tags'
+    body: JSON.stringify({ title, content, tags }) 
   });
   return res.json();
 }

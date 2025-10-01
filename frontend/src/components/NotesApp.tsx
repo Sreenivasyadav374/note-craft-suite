@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
 import { useAuthContext } from '../context/AuthContext';
 import { getNotes, createNote, updateNote, deleteNote as deleteNoteApi } from '../lib/api';
-import { Search, Plus, FileText, Trash2, Edit3, Save, X } from "lucide-react";
+import { Search, Plus, FileText, Trash2, Edit3, Save, X, Lightbulb } from "lucide-react"; // Added Lightbulb
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+
+// Assuming you have placed the modified llmModel.ts (now aiService.ts) in the lib folder
+import { aiService } from '../utils/aiService'; 
 
 interface Note {
   id: string;
@@ -26,6 +29,7 @@ const NotesApp = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editTags, setEditTags] = useState("");
+  const [isSuggesting, setIsSuggesting] = useState(false); // NEW: State for AI loading
   const { toast } = useToast();
 
 
@@ -95,8 +99,11 @@ const NotesApp = () => {
 
   const saveNote = async () => {
     if (!selectedNote || !token) return;
+    
+    // Parse tags from comma-separated string back to array
+    const tagsArray = editTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
 
-    const updated = await updateNote(token, selectedNote.id, editTitle.trim() || "Untitled Note", editContent);
+    const updated = await updateNote(token, selectedNote.id, editTitle.trim() || "Untitled Note", editContent, tagsArray);
     const updatedNote: Note = {
       id: updated._id,
       title: updated.title,
@@ -125,6 +132,60 @@ const NotesApp = () => {
       setEditTags(selectedNote.tags.join(", "));
     }
   };
+
+  // NEW FUNCTION: Handle AI Suggestion
+  const handleAISuggestion = async () => {
+    if (!selectedNote || !token || isSuggesting) return;
+    
+    const currentTitle = editTitle;
+    const currentContent = editContent;
+
+    if (currentContent.trim().length < 20) {
+      toast({
+        title: "Cannot suggest yet",
+        description: "Note content must be at least 20 characters long for AI analysis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSuggesting(true);
+    toast({
+      title: "Generating AI Suggestions...",
+      description: "Gemini is analyzing your note content. This may take a moment.",
+      duration: 5000,
+    });
+
+    try {
+      const suggestions = await aiService.generateNoteSuggestion(currentTitle, currentContent);
+
+      if (suggestions) {
+        // Apply suggestions to the editing state
+        setEditTitle(suggestions.suggestedTitle);
+        setEditTags(suggestions.suggestedTags.join(", "));
+        
+        toast({
+          title: "AI Suggestions Applied! ✨",
+          description: `New Title: "${suggestions.suggestedTitle}". New Tags: ${suggestions.suggestedTags.join(', ')}`,
+        });
+      } else {
+        toast({
+          title: "AI Suggestion Failed",
+          description: "Could not get suggestions. Check the console for errors.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+       toast({
+          title: "Error during AI Suggestion",
+          description: "An unexpected error occurred while communicating with the AI service.",
+          variant: "destructive",
+        });
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
 
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -261,6 +322,21 @@ const NotesApp = () => {
                       <CardTitle className="text-2xl">{selectedNote.title}</CardTitle>
                     )}
                     <div className="flex items-center space-x-2">
+                      {isEditing && ( // NEW: AI Suggestion Button appears while editing
+                      <>
+                        <Button 
+                          onClick={handleAISuggestion} 
+                          size="lg" 
+                          variant="secondary" 
+                          disabled={isSuggesting}
+                          className="text-primary hover:text-primary/80 transition-spring"
+                        >
+                          <Lightbulb className={`h-4 w-4 mr-2 ${isSuggesting ? 'animate-pulse' : ''}`} />
+                          {isSuggesting ? 'Thinking...' : 'AI Suggest'}
+                        </Button>
+                        </>
+                      )}
+                      
                       {isEditing ? (
                         <>
                           <Button onClick={saveNote} size="sm" className="bg-gradient-primary hover:opacity-90">
