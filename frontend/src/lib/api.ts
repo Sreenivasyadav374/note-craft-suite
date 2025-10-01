@@ -23,6 +23,15 @@ export async function login(username: string, password: string) {
   return res.json();
 }
 
+export async function googleLogin(credential: string) {
+  const res = await fetch(`${API_URL}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credential })
+  });
+  return res.json();
+}
+
 export async function getNotes(token: string) {
   const res = await fetch(`${API_URL}/notes`, {
     headers: { Authorization: `Bearer ${token}` }

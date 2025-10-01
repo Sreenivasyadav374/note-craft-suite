@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import ProfileDrawer from "@/components/ProfileDrawer";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function NotesPage() {
   const [notes, setNotes] = useState([]);
@@ -25,11 +26,15 @@ export default function NotesPage() {
   const [editContent, setEditContent] = useState("");
   const [editTags, setEditTags] = useState("");
   const { toast } = useToast();
-  const { token, isAuthenticated, logout } = useAuthContext();
+  const { token, isAuthenticated, logout, userProfile } = useAuthContext();
   const [loading, setLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
+  
+  const userInitials = userProfile?.name 
+    ? userProfile.name.substring(0, 2).toUpperCase()
+    : "U";
 
   useEffect(() => {
     if (!token) return;
@@ -224,10 +229,31 @@ export default function NotesPage() {
               </Button>
               <Button
                 onClick={() => setProfileDrawerOpen(true)}
-                className="bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md transition-spring shadow-luxury font-sans px-4 py-2 rounded-xl text-sm"
+                className="bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md transition-spring shadow-luxury font-sans rounded-xl"
                 size="lg"
               >
-                <UserCircle className="h-5 w-5" />
+                {isAuthenticated && userProfile?.picture ? (
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={userProfile.picture} alt={userProfile.name} />
+                    <AvatarFallback className="bg-primary text-white text-sm">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : isAuthenticated ? (
+                  <div className="flex items-center gap-2 px-2">
+                    <Avatar className="h-7 w-7">
+                      <AvatarFallback className="bg-primary text-white text-xs">
+                        {userInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">Profile</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-2">
+                    <UserCircle className="h-5 w-5" />
+                    <span className="text-sm font-medium">Sign In</span>
+                  </div>
+                )}
               </Button>
             </div>
           </div>

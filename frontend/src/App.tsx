@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -11,6 +12,9 @@ import NotesPage from "./pages/Notes";
 import ProtectedExample from "./pages/ProtectedExample";
 import NotesApp from "./components/NotesApp";
 import { useAuthContext, AuthProvider } from "./context/AuthContext";
+
+// Replace with your actual Google Client ID
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
 
 const queryClient = new QueryClient();
 
@@ -29,24 +33,26 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<AuthPage />} />
-              <Route path="/register" element={<AuthPage />} />
-              <Route path="/notes" element={<RequireAuth><NotesPage /></RequireAuth>} />
-              <Route path="/" element={<RequireAuth><NotesPage /></RequireAuth>} />
-              <Route path="/protected" element={<ProtectedExample />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<AuthPage />} />
+                <Route path="/register" element={<AuthPage />} />
+                <Route path="/notes" element={<RequireAuth><NotesPage /></RequireAuth>} />
+                <Route path="/" element={<RequireAuth><NotesPage /></RequireAuth>} />
+                <Route path="/protected" element={<ProtectedExample />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 };
 

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuthContext } from "../context/AuthContext";
 import { decodeJWT } from "../lib/jwt";
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfileDrawerProps {
   open: boolean;
@@ -17,11 +19,41 @@ interface ProfileDrawerProps {
 }
 
 export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
-  const { token, logout } = useAuthContext();
+  const { token, logout, isAuthenticated, googleLogin, userProfile, loading } = useAuthContext();
+  const { toast } = useToast();
   
   const payload = token ? decodeJWT(token) : null;
-  const username = payload?.username || "User";
+  const username = userProfile?.name || payload?.username || "User";
+  const userEmail = userProfile?.email || payload?.email || "";
+  const userPicture = userProfile?.picture;
   const userInitials = username.substring(0, 2).toUpperCase();
+
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (credentialResponse.credential) {
+      const res = await googleLogin(credentialResponse.credential);
+      if (res.token) {
+        toast({
+          title: "Welcome!",
+          description: "Successfully signed in with Google",
+        });
+        onOpenChange(false);
+      } else if (res.error) {
+        toast({
+          title: "Sign-in failed",
+          description: res.error,
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast({
+      title: "Sign-in failed",
+      description: "Failed to sign in with Google. Please try again.",
+      variant: "destructive",
+    });
+  };
 
   const premiumFeatures = [
     {
@@ -46,83 +78,120 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
       <SheetContent className="w-[400px] sm:w-[500px] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-l border-white/10 text-white">
         <SheetHeader className="space-y-6 pb-6 border-b border-white/10">
           <SheetTitle className="text-2xl font-display font-bold text-white">
-            Profile
+            {isAuthenticated ? "Profile" : "Welcome"}
           </SheetTitle>
           
-          {/* Premium Profile Section */}
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
-            <div className="flex items-start gap-4 mb-4">
-              <Avatar className="h-16 w-16 border-2 border-primary shadow-glow">
-                <AvatarImage src="" alt={username} />
-                <AvatarFallback className="bg-gradient-primary text-white text-xl font-bold">
-                  {userInitials}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
+          {!isAuthenticated ? (
+            /* Sign In Section */
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-white/10 shadow-2xl">
+              <div className="text-center mb-6">
+                <div className="mx-auto w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center mb-4 shadow-glow">
+                  <User className="h-10 w-10 text-white" />
+                </div>
                 <h3 className="text-xl font-display font-bold text-white mb-2">
-                  {username}
+                  Sign In to Continue
                 </h3>
-                <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 shadow-lg">
-                  <Crown className="h-3 w-3 mr-1" />
-                  Premium User
-                </Badge>
+                <p className="text-sm text-white/70">
+                  Access your premium notes and features
+                </p>
+              </div>
+              
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="filled_blue"
+                  size="large"
+                  text="signin_with"
+                  shape="rectangular"
+                  logo_alignment="left"
+                />
               </div>
             </div>
-          </div>
+          ) : (
+            /* Premium Profile Section */
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
+              <div className="flex items-start gap-4 mb-4">
+                <Avatar className="h-16 w-16 border-2 border-primary shadow-glow">
+                  <AvatarImage src={userPicture} alt={username} />
+                  <AvatarFallback className="bg-gradient-primary text-white text-xl font-bold">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1">
+                  <h3 className="text-xl font-display font-bold text-white mb-1">
+                    {username}
+                  </h3>
+                  {userEmail && (
+                    <p className="text-sm text-white/60 mb-2">{userEmail}</p>
+                  )}
+                  <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 shadow-lg">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Premium User
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
         </SheetHeader>
 
-        {/* Premium Features */}
-        <div className="py-6 space-y-4">
-          <h4 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-4">
-            Your Premium Benefits
-          </h4>
-          
-          {premiumFeatures.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-smooth group"
-            >
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-primary/20 rounded-lg group-hover:bg-primary/30 transition-smooth">
-                  <feature.icon className="h-5 w-5 text-primary" />
+        {isAuthenticated && (
+          <>
+            {/* Premium Features */}
+            <div className="py-6 space-y-4">
+              <h4 className="text-sm font-semibold text-white/70 uppercase tracking-wider mb-4">
+                Your Premium Benefits
+              </h4>
+              
+              {premiumFeatures.map((feature, index) => (
+                <div
+                  key={index}
+                  className="bg-white/5 backdrop-blur-md rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-smooth group"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/20 rounded-lg group-hover:bg-primary/30 transition-smooth">
+                      <feature.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h5 className="font-semibold text-white mb-1">
+                        {feature.title}
+                      </h5>
+                      <p className="text-sm text-white/60">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h5 className="font-semibold text-white mb-1">
-                    {feature.title}
-                  </h5>
-                  <p className="text-sm text-white/60">
-                    {feature.description}
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Actions */}
-        <div className="space-y-3 pt-6 border-t border-white/10">
-          <Button
-            className="w-full bg-gradient-primary hover:opacity-90 shadow-glow font-semibold py-6 rounded-xl text-base"
-            size="lg"
-          >
-            <Crown className="h-5 w-5 mr-2" />
-            Manage Subscription
-          </Button>
-          
-          <Button
-            onClick={() => {
-              logout();
-              onOpenChange(false);
-            }}
-            variant="outline"
-            className="w-full border-red-500/30 bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 font-semibold py-6 rounded-xl text-base backdrop-blur-md"
-            size="lg"
-          >
-            <LogOut className="h-5 w-5 mr-2" />
-            Logout
-          </Button>
-        </div>
+            {/* Actions */}
+            <div className="space-y-3 pt-6 border-t border-white/10">
+              <Button
+                className="w-full bg-gradient-primary hover:opacity-90 shadow-glow font-semibold py-6 rounded-xl text-base"
+                size="lg"
+              >
+                <Crown className="h-5 w-5 mr-2" />
+                Manage Subscription
+              </Button>
+              
+              <Button
+                onClick={() => {
+                  logout();
+                  onOpenChange(false);
+                }}
+                variant="outline"
+                className="w-full border-red-500/30 bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 font-semibold py-6 rounded-xl text-base backdrop-blur-md"
+                size="lg"
+                disabled={loading}
+              >
+                <LogOut className="h-5 w-5 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </>
+        )}
 
         {/* Footer */}
         <div className="pt-6 mt-6 border-t border-white/10">

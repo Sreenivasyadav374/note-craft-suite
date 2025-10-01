@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 // Assuming these are in backend/src/routes/auth.ts and backend/src/routes/notes.ts
 import authRoutes from './routes/auth'; 
+import googleAuthRoutes from './routes/google-auth';
 import notesRoutes from './routes/notes';
 
 dotenv.config();
@@ -56,8 +57,9 @@ app.use(async (req, res, next) => {
 
 // --- Route Handlers (These map to your frontend fetch calls) ---
 
-// Maps to: /api/auth/login, /api/auth/register
+// Maps to: /api/auth/login, /api/auth/register, /api/auth/google
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', googleAuthRoutes);
 
 // Maps to: /api/notes
 app.use('/api/notes', notesRoutes);

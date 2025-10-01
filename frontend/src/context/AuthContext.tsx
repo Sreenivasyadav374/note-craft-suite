@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { register as apiRegister, login as apiLogin } from '../lib/api';
+import { register as apiRegister, login as apiLogin, googleLogin as apiGoogleLogin } from '../lib/api';
 import { decodeJWT } from '../lib/jwt';
 
 export interface AuthContextType {
@@ -9,8 +9,10 @@ export interface AuthContextType {
   loading: boolean;
   error: string | null;
   initializing: boolean;
+  userProfile: { name: string; email: string; picture?: string } | null;
   register: (username: string, password: string) => Promise<any>;
   login: (username: string, password: string) => Promise<any>;
+  googleLogin: (credential: string) => Promise<any>;
   logout: () => void;
 }
 
@@ -22,13 +24,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [userProfile, setUserProfile] = useState<{ name: string; email: string; picture?: string } | null>(null);
 
   // On mount, restore token and refreshToken from localStorage, then set initializing to false
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedRefresh = localStorage.getItem('refreshToken');
+    const storedProfile = localStorage.getItem('userProfile');
     setToken(storedToken);
     setRefreshTokenValue(storedRefresh);
+    if (storedProfile) {
+      try {
+        setUserProfile(JSON.parse(storedProfile));
+      } catch (e) {
+        console.error('Failed to parse user profile', e);
+      }
+    }
     setInitializing(false);
   }, []);
 
@@ -84,6 +95,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (res.token) {
       setToken(res.token);
       if (res.refreshToken) setRefreshTokenValue(res.refreshToken);
+      // Set basic user profile from username
+      const profile = { name: username, email: username };
+      setUserProfile(profile);
+      localStorage.setItem('userProfile', JSON.stringify(profile));
+    } else if (res.error) {
+      setError(res.error);
+    }
+    return res;
+  };
+
+  const googleLogin = async (credential: string) => {
+    setLoading(true);
+    setError(null);
+    const res = await apiGoogleLogin(credential);
+    setLoading(false);
+    if (res.token) {
+      setToken(res.token);
+      if (res.refreshToken) setRefreshTokenValue(res.refreshToken);
+      // Set user profile from Google data
+      if (res.user) {
+        const profile = {
+          name: res.user.name,
+          email: res.user.email,
+          picture: res.user.picture
+        };
+        setUserProfile(profile);
+        localStorage.setItem('userProfile', JSON.stringify(profile));
+      }
     } else if (res.error) {
       setError(res.error);
     }
@@ -98,10 +137,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setToken(null);
     setRefreshTokenValue(null);
+    setUserProfile(null);
+    localStorage.removeItem('userProfile');
   };
 
   return (
-    <AuthContext.Provider value={{ token, refreshToken: refreshTokenValue, isAuthenticated: !!token, loading, error, initializing, register, login, logout }}>
+    <AuthContext.Provider value={{ token, refreshToken: refreshTokenValue, isAuthenticated: !!token, loading, error, initializing, userProfile, register, login, googleLogin, logout }}>
       {!initializing && children}
     </AuthContext.Provider>
   );
