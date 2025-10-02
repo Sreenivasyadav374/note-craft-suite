@@ -9,6 +9,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv_1 = __importDefault(require("dotenv"));
 // Assuming these are in backend/src/routes/auth.ts and backend/src/routes/notes.ts
 const auth_1 = __importDefault(require("./routes/auth"));
+const google_auth_1 = __importDefault(require("./routes/google-auth"));
 const notes_1 = __importDefault(require("./routes/notes"));
 dotenv_1.default.config();
 // Initialize Express app
@@ -49,8 +50,9 @@ app.use(async (req, res, next) => {
     }
 });
 // --- Route Handlers (These map to your frontend fetch calls) ---
-// Maps to: /api/auth/login, /api/auth/register
+// Maps to: /api/auth/login, /api/auth/register, /api/auth/google
 app.use('/api/auth', auth_1.default);
+app.use('/api/auth', google_auth_1.default);
 // Maps to: /api/notes
 app.use('/api/notes', notes_1.default);
 app.get("/", (req, res) => {
