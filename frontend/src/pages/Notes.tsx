@@ -6,7 +6,8 @@ import {
   updateNote,
   deleteNote as deleteNoteApi,
 } from "../lib/api";
-import { Search, Plus, FileText, Trash2, Edit3, Save, X, UserCircle,Lightbulb } from "lucide-react";
+// UPDATED ICONS: Added Lightbulb, ArrowLeft, Folder, FolderPlus
+import { Search, Plus, FileText, Trash2, Edit3, Save, X, UserCircle, Lightbulb, ArrowLeft, Folder, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,11 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import ProfileDrawer from "@/components/ProfileDrawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Assuming you renamed llmModel.ts to aiService.ts and updated it
 import { aiService } from '../utils/aiService';
 
+// UPDATED INTERFACE
 interface Note {
   id: string;
   title: string;
@@ -25,438 +29,534 @@ interface Note {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
+  type: 'file' | 'folder'; // <-- NEW: Type to distinguish
+  parentId?: string | null; // <-- NEW: Hierarchy tracking (null is root)
 }
 
 export default function NotesPage() {
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState<Note[]>([]); // Set type to Note[]
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedNote, setSelectedNote] = useState(null);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null); // Set type to Note | null
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editTags, setEditTags] = useState("");
+  const [isSuggesting, setIsSuggesting] = useState(false); // AI loading state
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null); // <-- NEW STATE for current folder
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { toast } = useToast();
   const { token, isAuthenticated, logout, userProfile } = useAuthContext();
-  const [loading, setLoading] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
-  const [isSuggesting, setIsSuggesting] = useState(false); // NEW: State for AI loading
-  
-  const userInitials = userProfile?.name 
-    ? userProfile.name.substring(0, 2).toUpperCase()
-    : "U";
+  const [isLoading, setIsLoading] = useState(true);
+
 
   useEffect(() => {
-    if (!token) return;
-    setIsInitialLoading(true);
-    getNotes(token)
-      .then((data) => {
-        const parsed = data.map((note) => ({
-          ...note,
-          id: note._id,
-          createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
-          updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
-        }));
-        setNotes(parsed);
-      })
-      .catch(() => {
-        toast({ title: "Error", description: "Failed to load notes." });
-      })
-      .finally(() => setIsInitialLoading(false));
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    getNotes(token).then((data: any[]) => {
+      const parsed: Note[] = data.map((note) => ({
+        id: note._id,
+        title: note.title,
+        content: note.content,
+        tags: note.tags || [],
+        createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
+        updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
+        type: note.type || 'file', // <-- Use API type or default to 'file'
+        parentId: note.parentId || null, // <-- Use API parentId or default to null
+      }));
+      setNotes(parsed);
+      setIsLoading(false);
+    }).catch(error => {
+      console.error("Error fetching notes:", error);
+      setIsLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to load notes. Please try again.",
+        variant: "destructive",
+      });
+    });
   }, [token]);
 
+  // --- FOLDER & NOTE CREATION/DELETION ---
+
+  // NEW FUNCTION: Create Folder
+ // Notes.tsx
+
+// ...
+  // NEW FUNCTION: Create Folder
+  const createNewFolder = async () => { // <-- NOTE: Changed to async
+    if (!token) return;
+
+    // 1. Create a placeholder object with default values
+    const newFolderData = {
+      title: "New Folder",
+      content: "", 
+      tags: [],
+      type: 'folder',
+      parentId: activeFolderId, // New folder is created in the current active folder
+    };
+
+    try {
+        // 2. IMPORTANT: Call the API to save the folder immediately
+        const savedFolderApi = await createNote(
+          token, 
+          newFolderData.title, 
+          newFolderData.content, 
+          newFolderData.tags, 
+          'folder', 
+          newFolderData.parentId
+        );
+
+        // 3. Create the final Note object using the real ID from the API
+        const parsedFolder: Note = {
+            id: savedFolderApi._id, // <-- THIS IS THE REAL MONGODB ID
+            title: savedFolderApi.title,
+            content: savedFolderApi.content,
+            tags: savedFolderApi.tags || [],
+            createdAt: new Date(savedFolderApi.createdAt),
+            updatedAt: new Date(savedFolderApi.updatedAt),
+            type: 'folder',
+            parentId: savedFolderApi.parentId || null,
+        };
+
+        // 4. Update the state and open the folder for navigation/editing
+        setNotes([parsedFolder, ...notes]);
+        openFolder(parsedFolder.id); // Navigate into the new folder immediately
+        startEditing(parsedFolder); // Start editing the name
+
+        toast({
+          title: "New folder created",
+          description: "Rename your new folder and start organizing!",
+        });
+        
+    } catch (error) {
+        console.error("Error creating folder:", error);
+        toast({
+            title: "Error",
+            description: "Failed to create folder.",
+            variant: "destructive",
+        });
+    }
+  };
+
+
+  // Notes.tsx
+
+// ...
   const createNewNote = async () => {
     if (!token) return;
-    setLoadingAction("create");
-    setLoading(true);
-    try {
-      const newNote = await createNote(token, "Untitled Note", "");
-      const parsedNote = {
-        ...newNote,
-        id: newNote._id,
-        createdAt: newNote.createdAt ? new Date(newNote.createdAt) : new Date(),
-        updatedAt: newNote.updatedAt ? new Date(newNote.updatedAt) : new Date(),
-      };
-      setNotes([parsedNote, ...notes]);
-      setSelectedNote(parsedNote);
-      setIsEditing(true);
-      setEditTitle(parsedNote.title);
-      setEditContent(parsedNote.content);
-      setEditTags("");
-      toast({
-        title: "New note created",
-        description: "Start writing your thoughts!",
-      });
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to create note." });
-    } finally {
-      setLoading(false);
-      setLoadingAction(null);
-    }
-  };
+    
+    // Assuming createNote API is correctly defined to accept all fields
+    const newNoteApi = await createNote(
+      token, 
+      "Untitled Note", 
+      "", 
+      [], 
+      'file', 
+      activeFolderId // <-- This is now guaranteed to be a real ID or null
+    );
+    
+    const parsedNote: Note = {
+      id: newNoteApi._id,
+      title: newNoteApi.title,
+      content: newNoteApi.content,
+      tags: newNoteApi.tags || [],
+      createdAt: newNoteApi.createdAt ? new Date(newNoteApi.createdAt) : new Date(),
+      updatedAt: newNoteApi.updatedAt ? new Date(newNoteApi.updatedAt) : new Date(),
+      type: 'file',
+      parentId: activeFolderId, // Assign to active folder
+    };
 
-  const deleteNote = async (noteId) => {
-    if (!token) return;
-    setLoadingAction("delete-" + noteId);
-    setLoading(true);
-    try {
-      await deleteNoteApi(token, noteId);
-      setNotes(
-        notes.filter((note) => note.id !== noteId && note._id !== noteId)
-      );
-      if (selectedNote?.id === noteId || selectedNote?._id === noteId) {
-        setSelectedNote(null);
-        setIsEditing(false);
-      }
-      toast({
-        title: "Note deleted",
-        description: "Note has been successfully removed.",
-      });
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to delete note." });
-    } finally {
-      setLoading(false);
-      setLoadingAction(null);
-    }
-  };
-
-  const startEditing = (note) => {
-    setSelectedNote(note);
+    setNotes([parsedNote, ...notes]);
+    setSelectedNote(parsedNote);
     setIsEditing(true);
-    setEditTitle(note.title);
-    setEditContent(note.content);
-    setEditTags((note.tags || []).join(", "));
+    setEditTitle(parsedNote.title);
+    setEditContent(parsedNote.content);
+    setEditTags("");
+    toast({
+      title: "New note created",
+      description: "Start writing your thoughts!",
+    });
+  };
+// ...
+
+  const deleteNote = async (noteId: string) => {
+    if (!token) return;
+    await deleteNoteApi(token, noteId);
+    setNotes(notes.filter(note => note.id !== noteId));
+    if (selectedNote?.id === noteId) {
+      setSelectedNote(null);
+      setIsEditing(false);
+    }
+    toast({
+      title: "Item deleted",
+      description: "Item has been successfully removed.",
+    });
+  };
+
+  // --- EDITING AND SAVING ---
+
+  const startEditing = (item: Note) => {
+    setSelectedNote(item);
+    setIsEditing(true);
+    setEditTitle(item.title);
+    setEditContent(item.content);
+    setEditTags(item.tags.join(", "));
   };
 
   const saveNote = async () => {
-     if (!selectedNote || !token) return;
-     
-     // Parse tags from comma-separated string back to array
-     const tagsArray = editTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
- 
-     const updated = await updateNote(token, selectedNote.id, editTitle.trim() || "Untitled Note", editContent, tagsArray);
-     const updatedNote: Note = {
-       id: updated._id,
-       title: updated.title,
-       content: updated.content,
-       tags: updated.tags || [],
-       createdAt: updated.createdAt ? new Date(updated.createdAt) : new Date(),
-       updatedAt: updated.updatedAt ? new Date(updated.updatedAt) : new Date(),
-     };
- 
-     setNotes(notes.map(note => 
-       note.id === selectedNote.id ? updatedNote : note
-     ));
-     setSelectedNote(updatedNote);
-     setIsEditing(false);
-     toast({
-       title: "Note saved",
-       description: "Your changes have been saved successfully.",
-     });
-   };
+    if (!selectedNote || !token) return;
+    
+    const tagsArray = editTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    const contentToSave = selectedNote.type === 'file' ? editContent : ''; // Folders have no content
+
+    // Use updateNote with all necessary fields
+    const updated = await updateNote(
+      token, 
+      selectedNote.id, 
+      editTitle.trim() || (selectedNote.type === 'folder' ? "Untitled Folder" : "Untitled Note"), 
+      contentToSave,
+      tagsArray,
+      selectedNote.type, // Pass existing type
+      selectedNote.parentId // Pass existing parentId
+    ); 
+
+    const updatedNote: Note = {
+      id: updated._id,
+      title: updated.title,
+      content: updated.content,
+      tags: updated.tags || [],
+      createdAt: updated.createdAt ? new Date(updated.createdAt) : new Date(),
+      updatedAt: updated.updatedAt ? new Date(updated.updatedAt) : new Date(),
+      type: updated.type,
+      parentId: updated.parentId || null,
+    };
+
+    setNotes(notes.map(note => 
+      note.id === selectedNote.id ? updatedNote : note
+    ));
+    setSelectedNote(updatedNote);
+    setIsEditing(false);
+    toast({
+      title: "Item saved",
+      description: "Your changes have been saved successfully.",
+    });
+  };
 
   const cancelEditing = () => {
     setIsEditing(false);
     if (selectedNote) {
       setEditTitle(selectedNote.title);
       setEditContent(selectedNote.content);
-      setEditTags((selectedNote.tags || []).join(", "));
+      setEditTags(selectedNote.tags.join(", "));
+    }
+  };
+  
+  // --- FOLDER NAVIGATION ---
+  
+  // NEW FUNCTION: Open Folder
+  const openFolder = (folderId: string) => {
+    setActiveFolderId(folderId);
+    setSelectedNote(null); 
+    setIsEditing(false);
+    setSearchTerm(""); // Clear search when navigating
+  };
+
+  // NEW FUNCTION: Navigate Back
+  const navigateBack = () => {
+    if (activeFolderId === null) return;
+
+    // Find the current active folder to get its parent ID
+    const currentFolder = notes.find(n => n.id === activeFolderId && n.type === 'folder');
+    
+    // Set the active folder ID to the parent ID (or null if the parent is root)
+    setActiveFolderId(currentFolder?.parentId || null);
+    setSelectedNote(null);
+    setIsEditing(false);
+    setSearchTerm(""); // Clear search when navigating
+  };
+  
+  // --- AI SUGGESTION ---
+  
+  // NEW FUNCTION: Handle AI Suggestion
+  const handleAISuggestion = async () => {
+    if (!selectedNote || selectedNote.type === 'folder' || !token || isSuggesting) return;
+    
+    const currentTitle = editTitle;
+    const currentContent = editContent;
+
+    if (currentContent.trim().length < 20) {
+      toast({
+        title: "Cannot suggest yet",
+        description: "Note content must be at least 20 characters long for AI analysis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSuggesting(true);
+    toast({
+      title: "Generating AI Suggestions...",
+      description: "Gemini is analyzing your note content.",
+      duration: 5000,
+    });
+
+    try {
+      // Assuming aiService.generateNoteSuggestion is defined elsewhere
+      const suggestions = await aiService.generateNoteSuggestion(currentTitle, currentContent);
+
+      if (suggestions) {
+        setEditTitle(suggestions.suggestedTitle);
+        setEditTags(suggestions.suggestedTags.join(", "));
+        
+        toast({
+          title: "AI Suggestions Applied! ✨",
+          description: `New Title: "${suggestions.suggestedTitle}". New Tags: ${suggestions.suggestedTags.join(', ')}`,
+        });
+      } else {
+        toast({
+          title: "AI Suggestion Failed",
+          description: "Could not get suggestions.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+       toast({
+          title: "AI Suggestion Error",
+          description: "An error occurred during the suggestion process.",
+          variant: "destructive",
+        });
+    } finally {
+      setIsSuggesting(false);
     }
   };
 
-   // NEW FUNCTION: Handle AI Suggestion
-    const handleAISuggestion = async () => {
-      if (!selectedNote || !token || isSuggesting) return;
-      
-      const currentTitle = editTitle;
-      const currentContent = editContent;
-  
-      if (currentContent.trim().length < 10) {
-        toast({
-          title: "Cannot suggest yet",
-          description: "Note content must be at least 10 characters long for AI analysis.",
-          variant: "destructive",
-        });
-        return;
-      }
-  
-      setIsSuggesting(true);
-      toast({
-        title: "Generating AI Suggestions...",
-        description: "Gemini is analyzing your note content. This may take a moment.",
-        duration: 5000,
-      });
-  
-      try {
-        const suggestions = await aiService.generateNoteSuggestion(currentTitle, currentContent);
-  
-        if (suggestions) {
-          // Apply suggestions to the editing state
-          setEditTitle(suggestions.suggestedTitle);
-          setEditTags(suggestions.suggestedTags.join(", "));
-          
-          toast({
-            title: "AI Suggestions Applied! ✨",
-            description: `New Title: "${suggestions.suggestedTitle}". New Tags: ${suggestions.suggestedTags.join(', ')}`,
-          });
-        } else {
-          toast({
-            title: "AI Suggestion Failed",
-            description: "Could not get suggestions. Check the console for errors.",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-         toast({
-            title: "Error during AI Suggestion",
-            description: "An unexpected error occurred while communicating with the AI service.",
-            variant: "destructive",
-          });
-      } finally {
-        setIsSuggesting(false);
-      }
-    };
+  const getVisibleItems = () => {
+    // 1. Filter items by the current activeFolderId
+    let items = notes.filter(note => note.parentId === activeFolderId);
+    
+    // 2. Filter these items by the search term
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      items = items.filter(note =>
+        note.title.toLowerCase().includes(lowerSearchTerm) ||
+        (note.type === 'file' && note.content.toLowerCase().includes(lowerSearchTerm)) ||
+        note.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm))
+      );
+    }
 
-  const filteredNotes = notes.filter(
-    (note) =>
-      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (note.tags || []).some((tag) =>
-        tag.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-  );
+    // 3. APPLY NEW SORTING LOGIC: Folders first, then by newest updatedAt date
+    return items.sort((a, b) => {
+        // Folders always come first
+        if (a.type === 'folder' && b.type === 'file') return -1;
+        if (a.type === 'file' && b.type === 'folder') return 1;
+        
+        // If they are both the same type (both file or both folder), sort by newest date
+        // Note: Dates must be compared using getTime()
+        return b.updatedAt.getTime() - a.updatedAt.getTime();
+    });
+  };
+  
+  const visibleItems = getVisibleItems();
 
-  // Only render NotesPage if authenticated and token is present
-  if (!isAuthenticated || !token) {
-    return null;
-  }
 
-  if (isInitialLoading) {
-    return <div className="p-8 text-center text-lg">Loading your notes...</div>;
+  if (!isAuthenticated) {
+    return <div className="p-8 text-center text-lg">Please log in to view your notes.</div>;
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <ProfileDrawer open={profileDrawerOpen} onOpenChange={setProfileDrawerOpen} />
-      {/* Header */}
-      <header className="bg-gradient-hero border-b shadow-elegant relative overflow-hidden">
-
-        <div className="absolute top-0 left-0 w-72 h-72 bg-primary-glow/20 rounded-full blur-3xl animate-float"></div>
-
-        <div
-          className="absolute bottom-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float"
-          style={{ animationDelay: "-3s" }}
-        ></div>
-        <div className="container mx-auto px-6 py-1 relative z-10">
+      {/* Header (No UI Change) */}
+      <header className="bg-gradient-hero border-b shadow-elegant">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 animate-fade-in">
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-md border border-white/20 shadow-luxury flex items-center justify-center"> 
-                <FileText className="h-8 w-8 text-white drop-shadow-lg" />
+            <div className="flex items-center space-x-3">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <FileText className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-display font-bold text-white mb-1 tracking-tight">
-                  Premium Notes
-                </h1>
-                <p className="text-base text-white/90 font-sans">Luxury note-taking reimagined
-                </p>
+                <h1 className="text-3xl font-bold text-white">NotesApp</h1>
+                <p className="text-white/80">Capture your thoughts beautifully</p>
               </div>
             </div>
-            <div
-              className="flex items-center gap-4 animate-fade-in"
-              style={{ animationDelay: "0.2s" }}
-            >
-              <Button
-                type="button"
-                onClick={createNewNote}
-                className="bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md transition-spring shadow-luxury font-sans px-6 py-2 rounded-xl text-sm"
-                size="lg"
-                disabled={loadingAction === "create"}
-              >
-                {loadingAction === "create" ? (
-                  <Spinner className="h-4 w-4 mr-2" />
-                ) : (
-                  <Plus className="h-4 w-4 mr-2" />
-                )}
-                New Note
-              </Button>
-              <Button
-                onClick={() => setProfileDrawerOpen(true)}
-                className="bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md transition-spring shadow-luxury font-sans rounded-xl"
-                size="lg"
-              >
-                {isAuthenticated && userProfile?.picture ? (
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={userProfile.picture} alt={userProfile.name} />
-                    <AvatarFallback className="bg-primary text-white text-sm">
-                      {userInitials}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : isAuthenticated ? (
-                  <div className="flex items-center gap-2 px-2">
-                    <Avatar className="h-7 w-7">
-                      <AvatarFallback className="bg-primary text-white text-xs">
-                        {userInitials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-medium">Profile</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 px-2">
-                    <UserCircle className="h-5 w-5" />
-                    <span className="text-sm font-medium">Sign In</span>
-                  </div>
-                )}
+            <div className="flex items-center space-x-4">
+              <Button onClick={() => setIsDrawerOpen(true)} variant="ghost" className="p-0 h-auto">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={userProfile?.picture} />
+                  <AvatarFallback><UserCircle className="h-6 w-6" /></AvatarFallback>
+                </Avatar>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-10">
-        <div className="grid lg:grid-cols-3 gap-10">
-          {/* Sidebar - Notes List */}
-          <div
-            className="lg:col-span-1 animate-fade-in"
-            style={{ animationDelay: "0.3s" }}
-          >
-            <div className="mb-8">
-              <h2 className="text-2xl font-display font-semibold mb-4 text-foreground">
-                Your Collection
-              </h2>
+      <ProfileDrawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} />
+
+      <div className="container mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Sidebar - Notes List (Folder Logic Added) */}
+          <div className="lg:col-span-1">
+            {/* Folder Navigation */}
+            {activeFolderId !== null && (
+              <div className="mb-4 flex items-center">
+                <Button 
+                  variant="ghost" 
+                  onClick={navigateBack} 
+                  className="mr-2 px-2"
+                  size="sm"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1" /> **Back**
+                </Button>
+                <h3 className="font-semibold text-lg truncate">
+                  {notes.find(n => n.id === activeFolderId)?.title || "Root"}
+                </h3>
+              </div>
+            )}
+
+            <div className="mb-6">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search your notes..."
+                  placeholder="Search notes and folders..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-12 bg-card/80 backdrop-blur-md shadow-card border-0 focus:shadow-glow transition-smooth text-lg py-6 rounded-xl font-sans placeholder:text-muted-foreground/70"
+                  className="pl-10 bg-card shadow-card border-0 focus:shadow-glow transition-smooth"
                 />
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-card h-[calc(100vh-280px)]">
-              <div className="space-y-3 h-full overflow-y-auto overflow-x-hidden">
-                {filteredNotes.length === 0 ? (
-                <Card className="shadow-card border-0 bg-gradient-card animate-scale-in min-h-[280px]">
-                  <CardContent className="p-8 text-center">
-                    <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-6 opacity-60" />
-                    <h3 className="text-xl font-display font-semibold mb-2 text-foreground">
-                      {notes.length === 0
-                        ? "Begin Your Journey"
-                        : "No Results Found"}
-                    </h3>
-                    <p className="text-muted-foreground font-sans">
-                      {notes.length === 0
-                        ? "Create your first luxury note and start capturing brilliance."
-                        : "Try a different search term to find your notes."}
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredNotes.map((note, index) => (
-                  <Card
-                    key={note.id}
-                    className={`cursor-pointer transition-spring shadow-card border-0 bg-gradient-card hover:shadow-glow animate-fade-in ${
-                      selectedNote?.id === note.id
-                        ? "ring-2 ring-primary shadow-glow scale-[1.02]"
-                        : "hover:scale-[1.01]"
-                    }`}
-                    onClick={() => setSelectedNote(note)}
-                    style={{ animationDelay: `${0.4 + index * 0.1}s` }}
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg font-display font-semibold truncate mr-3 text-foreground leading-tight">
-                          {note.title}
-                        </CardTitle>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteNote(note.id);
-                          }}
-                          className="text-muted-foreground hover:text-destructive transition-smooth rounded-lg p-1.5 h-auto"
-                          disabled={loadingAction === "delete-" + note.id}
-                        >
-                          {loadingAction === "delete-" + note.id ? (
-                            <Spinner className="h-3.5 w-3.5" />
-                          ) : (
-                            <Trash2 className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0 pb-3">
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3 font-sans leading-relaxed">
-                        {note.content || "No content"}
-                      </p>
-                      {note.tags && note.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {note.tags.slice(0, 2).map((tag, index) => (
-                            <Badge
-                              key={index}
-                              variant="secondary"
-                              className="text-xs font-sans px-2 py-0.5 rounded-full bg-primary/10 text-primary border-0"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                          {note.tags.length > 2 && (
-                            <Badge
-                              variant="secondary"
-                              className="text-xs font-sans px-2 py-0.5 rounded-full bg-primary/10 text-primary border-0"
-                            >
-                              +{note.tags.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                      <p className="text-xs text-muted-foreground font-sans font-medium">
-                        {note.updatedAt.toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-              </div>
+            {/* Folder and Note Creation Buttons */}
+            <div className="flex space-x-2 mb-4">
+              <Button 
+                onClick={createNewNote}
+                className="flex-1 bg-gradient-primary hover:opacity-90 transition-spring"
+              >
+                <Plus className="h-4 w-4 mr-1" /> Note
+              </Button>
+              <Button 
+                onClick={createNewFolder} // <-- New folder button
+                variant="outline"
+                className="flex-1 border-primary text-primary hover:bg-primary/10 transition-spring"
+              >
+                <FolderPlus className="h-4 w-4 mr-1" /> **Folder**
+              </Button>
             </div>
+
+            {isLoading ? (
+              <div className="flex justify-center items-center h-48"><Spinner /></div>
+            ) : (
+              <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
+    {visibleItems.length === 0 ? (
+        <Card className="shadow-card border-0 bg-gradient-card">
+            <CardContent className="p-6 text-center">
+                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                    {notes.length === 0 ? "No items yet. Create your first note or folder!" : "No items found in this location."}
+                </p>
+            </CardContent>
+        </Card>
+    ) : (
+        visibleItems
+            // NOTE: The sorting logic should be placed inside your getVisibleItems function.
+            // If it remains here, update it to sort by date as shown below:
+            .sort((a, b) => {
+                // 1. Sort: Folders first
+                if (a.type === 'folder' && b.type === 'file') return -1;
+                if (a.type === 'file' && b.type === 'folder') return 1;
+                // 2. Sort: Newest created/updated item on top
+                return b.updatedAt.getTime() - a.updatedAt.getTime();
+            })
+            .map((item) => (
+                <Card
+                    key={item.id}
+                    className={`cursor-pointer transition-spring shadow-card border-0 bg-gradient-card hover:shadow-glow ${
+                        selectedNote?.id === item.id && item.type === 'file' ? "ring-2 ring-primary shadow-glow" : ""
+                    }`}
+                    // Click logic: open folder or select file/note
+                    onClick={() => item.type === 'folder' ? openFolder(item.id) : startEditing(item)} 
+                >
+                    <CardHeader className="py-2"> {/* FIX: Reduced vertical padding here */}
+                        <div className="flex items-start justify-between">
+                            <CardTitle className="text-lg truncate mr-2 flex items-center">
+                                {/* Item Icon */}
+                                {item.type === 'folder' ? (
+                                    <Folder className="h-5 w-5 mr-2 text-yellow-500/80" />
+                                ) : (
+                                    <FileText className="h-5 w-5 mr-2 text-primary/80" />
+                                )}
+                                {item.title}
+                            </CardTitle>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteNote(item.id);
+                                }}
+                                className="text-muted-foreground hover:text-destructive transition-smooth"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    {/* Content and tags only for files */}
+                    {item.type === 'file' && (
+                        // FIX: Reduced padding and margins for a compact card
+                        <CardContent className="py-2"> 
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-1"> {/* FIX: Reduced mb-3 to mb-1 */}
+                                {item.content || "No content"}
+                            </p>
+                            {item.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-1"> {/* FIX: Reduced mb-3 to mb-1 */}
+                                    {item.tags.slice(0, 3).map((tag, index) => (
+                                        <Badge key={index} variant="secondary" className="text-xs">
+                                            {tag}
+                                        </Badge>
+                                    ))}
+                                    {item.tags.length > 3 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                            +{item.tags.length - 3}
+                                        </Badge>
+                                    )}
+                                </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                {item.updatedAt.toLocaleDateString()}
+                            </p>
+                        </CardContent>
+                    )}
+                </Card>
+            ))
+    )}
+</div>
+            )}
           </div>
 
           {/* Main Content - Note Editor */}
-          <div
-            className="lg:col-span-2 animate-fade-in"
-            style={{ animationDelay: "0.5s" }}
-          >
+          <div className="lg:col-span-2">
             {selectedNote ? (
-              <Card className="shadow-elegant border-0 bg-gradient-card animate-scale-in">
-                <CardHeader className="border-b bg-white/30 backdrop-blur-md p-8">
+              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-200px)]">
+                <CardHeader className="border-b bg-white/50 backdrop-blur-sm">
                   <div className="flex items-center justify-between">
-                  {isEditing ? (
-                      <div className="flex-1 mr-4">
-                        <Input
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          className="text-3xl font-display font-bold bg-white/20 backdrop-blur-md border border-white/30 rounded-xl px-6 py-4 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-smooth placeholder:text-muted-foreground/50 shadow-card"
-                          placeholder="Enter your note title..."
-                        />
-                      </div>
+                    {isEditing ? (
+                      <Input
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="text-xl font-bold border-0 bg-transparent p-0 focus:ring-0"
+                        placeholder={selectedNote.type === 'folder' ? "Folder Name..." : "Note title..."}
+                      />
                     ) : (
-                      <CardTitle className="text-3xl font-display font-bold text-foreground leading-tight">
-                        {selectedNote.title}
-                      </CardTitle>
+                      <CardTitle className="text-2xl">{selectedNote.title}</CardTitle>
                     )}
-                    <div className="flex items-center space-x-3">
-                      {isEditing && ( // NEW: AI Suggestion Button appears while editing
-                      <>
+                    <div className="flex items-center space-x-2">
+                      {/* AI Suggestion Button (Visible only for files and when editing) */}
+                      {isEditing && selectedNote.type === 'file' && (
                         <Button 
                           onClick={handleAISuggestion} 
-                          size="lg" 
+                          size="sm" 
                           variant="secondary" 
                           disabled={isSuggesting}
                           className="text-primary hover:text-primary/80 transition-spring"
@@ -464,123 +564,101 @@ export default function NotesPage() {
                           <Lightbulb className={`h-4 w-4 mr-2 ${isSuggesting ? 'animate-pulse' : ''}`} />
                           {isSuggesting ? 'Thinking...' : 'AI Suggest'}
                         </Button>
-                        </>
                       )}
+
                       {isEditing ? (
                         <>
-                          <Button
-                            onClick={saveNote}
-                            className="bg-gradient-primary hover:opacity-90 shadow-glow font-sans font-medium px-6 py-3 rounded-xl"
-                            disabled={loadingAction === "save"}
-                          >
-                            {loadingAction === "save" ? (
-                              <Spinner className="h-5 w-5 mr-2" />
-                            ) : (
-                              <Save className="h-5 w-5 mr-2" />
-                            )}
-                            Save Changes
+                          <Button onClick={saveNote} size="sm" className="bg-gradient-primary hover:opacity-90">
+                            <Save className="h-4 w-4 mr-2" />
+                            Save
                           </Button>
-                          <Button
-                            onClick={cancelEditing}
-                            variant="outline"
-                            className="font-sans font-medium px-6 py-3 rounded-xl border-muted-foreground/20 hover:bg-muted/50"
-                          >
-                            <X className="h-5 w-5 mr-2" />
+                          <Button onClick={cancelEditing} variant="outline" size="sm">
+                            <X className="h-4 w-4 mr-2" />
                             Cancel
                           </Button>
                         </>
                       ) : (
-                        <Button
-                          onClick={() => startEditing(selectedNote)}
-                          className="bg-gradient-primary hover:opacity-90 shadow-glow font-sans font-medium px-6 py-3 rounded-xl"
-                        >
-                          <Edit3 className="h-5 w-5 mr-2" />
-                          Edit Note
+                        <Button onClick={() => startEditing(selectedNote)} size="sm" className="bg-gradient-primary hover:opacity-90">
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          Edit
                         </Button>
                       )}
                     </div>
                   </div>
-
-                  {isEditing && (
-                    <div className="mt-6">
-                      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-card">
-                        <label className="block text-sm font-sans font-medium text-foreground/80 mb-2">
-                          Tags
-                        </label>
-                        <Input
-                          value={editTags}
-                          onChange={(e) => setEditTags(e.target.value)}
-                          placeholder="Add tags (comma separated)..."
-                          className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-4 py-3 text-lg font-sans placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-smooth"
-                        />
-                      </div>
+                  
+                  {/* Tags Input (Hidden for folders) */}
+                  {isEditing && selectedNote.type === 'file' && (
+                    <div className="mt-4">
+                      <Input
+                        value={editTags}
+                        onChange={(e) => setEditTags(e.target.value)}
+                        placeholder="Tags (comma separated)..."
+                        className="border-0 bg-transparent"
+                      />
                     </div>
                   )}
-
-                  {!isEditing &&
-                    selectedNote.tags &&
-                    selectedNote.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-3 mt-6">
-                        {selectedNote.tags.map((tag, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="bg-primary/10 border-primary/30 font-sans px-4 py-2 rounded-full text-sm"
-                          >
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                  
+                  {/* Tags Display (Hidden for folders) */}
+                  {!isEditing && selectedNote.tags.length > 0 && selectedNote.type === 'file' && (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {selectedNote.tags.map((tag, index) => (
+                        <Badge key={index} variant="outline" className="bg-primary/10 border-primary/30">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </CardHeader>
-
-                <CardContent className="p-8 h-full">
-                  {isEditing ? (
-                    <div className="h-full bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 shadow-card">
-                      <label className="block text-sm font-sans font-medium text-foreground/80 mb-3">
-                        Content
-                      </label>
+                
+                <CardContent className="p-6 h-full">
+                  {/* Content Area (Hidden for folders) */}
+                  {selectedNote.type === 'file' ? (
+                    isEditing ? (
                       <Textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        placeholder="Begin crafting your masterpiece..."
-                        className="w-full h-[calc(100%-60px)] resize-none text-lg leading-relaxed font-sans bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-smooth placeholder:text-muted-foreground/60 shadow-inner"
+                        placeholder="Start writing your note..."
+                        className="w-full h-full border-0 bg-transparent resize-none focus:ring-0 text-base leading-relaxed"
                       />
-                    </div>
-                  ) : (
-                    <div className="h-full overflow-y-auto">
-                      <div className="whitespace-pre-wrap text-lg leading-relaxed font-sans text-foreground/90">
-                        {selectedNote.content || (
-                          <span className="text-muted-foreground italic text-xl font-display">
-                            This canvas awaits your inspiration. Click Edit to
-                            begin creating.
-                          </span>
-                        )}
+                    ) : (
+                      <div className="h-full overflow-y-auto">
+                        <div className="whitespace-pre-wrap text-base leading-relaxed">
+                          {selectedNote.content || (
+                            <span className="text-muted-foreground italic">
+                              This note is empty. Click Edit to add content.
+                            </span>
+                          )}
+                        </div>
                       </div>
+                    )
+                  ) : (
+                    // Folder Content Placeholder
+                    <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                            <Folder className="h-16 w-16 mx-auto mb-4 text-yellow-500/80"/>
+                            <h3 className="text-2xl font-bold">This is a folder.</h3>
+                            <p className="text-muted-foreground">You can't write content here. Click **Edit** to rename it.</p>
+                            <p className="text-muted-foreground">Use the sidebar to navigate into the folder.</p>
+                        </div>
                     </div>
                   )}
                 </CardContent>
               </Card>
             ) : (
-              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)] animate-scale-in">
+              // Reverted to simple select-note view
+              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)]">
                 <CardContent className="flex items-center justify-center h-full">
-                  <div className="text-center animate-fade-in">
-                    <div className="w-32 h-32 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-8 shadow-luxury animate-float">
-                      <FileText className="h-16 w-16 text-white drop-shadow-lg" />
+                  <div className="text-center">
+                    <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                      <FileText className="h-12 w-12 text-white" />
                     </div>
-                    <h3 className="text-4xl font-display font-bold mb-4 text-foreground">
-                      Choose Your Canvas
-                    </h3>
-                    <p className="text-xl text-muted-foreground mb-8 font-sans leading-relaxed max-w-md mx-auto">
-                      Select a note from your collection or create a new
-                      masterpiece to begin your creative journey.
+                    <h3 className="text-2xl font-bold mb-2">Select an item to view</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Choose an item from the sidebar or create a new one to get started.
                     </p>
-                    <Button
-                      onClick={createNewNote}
-                      className="bg-gradient-primary hover:opacity-90 shadow-glow font-sans font-medium text-lg px-8 py-4 rounded-xl transition-spring"
-                    >
-                      <Plus className="h-6 w-6 mr-3" />
-                      Create New Masterpiece
+                    <Button onClick={createNewNote} className="bg-gradient-primary hover:opacity-90">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create New Note
                     </Button>
                   </div>
                 </CardContent>

@@ -39,14 +39,28 @@ export async function getNotes(token: string) {
   return res.json();
 }
 
-export async function createNote(token: string, title: string, content: string) {
+export async function createNote(
+  token: string, 
+  title: string, 
+  content: string, 
+  tags: string[] = [], // <-- New: Tags array
+  type: 'file' | 'folder' = 'file', // <-- New: Type with default 'file'
+  parentId: string | null = null // <-- New: Optional parent folder ID
+) {
   const res = await fetch(`${API_URL}/notes`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
     },
-    body: JSON.stringify({ title, content })
+    // Include all new fields in the request body
+    body: JSON.stringify({ 
+      title, 
+      content, 
+      tags,
+      type,
+      parentId 
+    })
   });
   return res.json();
 }
@@ -56,7 +70,9 @@ export async function updateNote(
   id: string, 
   title: string, 
   content: string, 
-  tags?: string[] // <-- Added tags argument (optional)
+  tags?: string[], // Already present
+  type?: 'file' | 'folder', // <-- NEW: Item type
+  parentId?: string | null // <-- NEW: Parent folder ID
 ) {
   const res = await fetch(`${API_URL}/notes/${id}`, {
     method: 'PUT',
@@ -64,8 +80,14 @@ export async function updateNote(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`
     },
-    // The request body now includes 'tags'
-    body: JSON.stringify({ title, content, tags }) 
+    // The request body now includes 'tags', 'type', and 'parentId'
+    body: JSON.stringify({ 
+      title, 
+      content, 
+      tags, 
+      type, // Pass item type (e.g., 'file' or 'folder')
+      parentId // Pass parent folder ID
+    })
   });
   return res.json();
 }
