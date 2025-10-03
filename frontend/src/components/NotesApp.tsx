@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import { useAuthContext } from '../context/AuthContext';
 import { getNotes, createNote, updateNote, deleteNote as deleteNoteApi } from '../lib/api';
-import { Search, Plus, FileText, Trash2, Edit3, Save, X, Lightbulb } from "lucide-react"; // Added Lightbulb
+import { Search, Plus, FileText, Trash2, Edit3, Save, X, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-
-// Assuming you have placed the modified llmModel.ts (now aiService.ts) in the lib folder
-import { aiService } from '../utils/aiService'; 
+import { RichTextEditor } from "./RichTextEditor";
+import { aiService } from '../utils/aiService';
 
 interface Note {
   id: string;
@@ -279,7 +277,9 @@ const NotesApp = () => {
                     </CardHeader>
                     <CardContent className="pt-0">
                       <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-                        {note.content || "No content"}
+                        {note.content ? 
+                          note.content.replace(/<[^>]*>/g, '').substring(0, 150) || "No content" 
+                          : "No content"}
                       </p>
                       {note.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-3">
@@ -379,23 +379,21 @@ const NotesApp = () => {
                   )}
                 </CardHeader>
                 
-                <CardContent className="p-6 h-full">
+                <CardContent className="p-6 h-full overflow-y-auto">
                   {isEditing ? (
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
+                    <RichTextEditor
+                      content={editContent}
+                      onChange={setEditContent}
                       placeholder="Start writing your note..."
-                      className="w-full h-full border-0 bg-transparent resize-none focus:ring-0 text-base leading-relaxed"
                     />
                   ) : (
                     <div className="h-full overflow-y-auto">
-                      <div className="whitespace-pre-wrap text-base leading-relaxed">
-                        {selectedNote.content || (
-                          <span className="text-muted-foreground italic">
-                            This note is empty. Click Edit to add content.
-                          </span>
-                        )}
-                      </div>
+                      <div 
+                        className="prose prose-sm max-w-none text-base leading-relaxed"
+                        dangerouslySetInnerHTML={{ 
+                          __html: selectedNote.content || '<span class="text-muted-foreground italic">This note is empty. Click Edit to add content.</span>' 
+                        }}
+                      />
                     </div>
                   )}
                 </CardContent>

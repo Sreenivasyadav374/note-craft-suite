@@ -1,5 +1,10 @@
 {
   "dependencies": {
-    "@react-oauth/google": "^0.12.2"
+    "@react-oauth/google": "^0.12.2",
+    "@tiptap/extension-image": "^3.6.3",
+    "@tiptap/extension-task-item": "^3.6.3",
+    "@tiptap/extension-task-list": "^3.6.3",
+    "@tiptap/react": "^3.6.3",
+    "@tiptap/starter-kit": "^3.6.3"
   }
 }
