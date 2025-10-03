@@ -1,4 +1,4 @@
-// aiService.ts (Renamed from llmModel.ts for better convention)
+// aiService.ts
 
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { StructuredOutputParser } from '@langchain/core/output_parsers';
@@ -15,73 +15,16 @@ const llm = new ChatGoogleGenerativeAI({
   apiKey: apiKey
 });
 
-// =======================================================
-// --- Task Suggestion Logic (Existing) ---
-// =======================================================
-
-// Define the Structured Output Schema using Zod
-const suggestionSchema = z.object({
-  title: z.string().describe("A concise title for the suggested task."),
-  description: z.string().describe("A brief, actionable description of the task."),
-  category: z.enum(["work", "personal", "health", "social", "learning"]).describe("The category ID that best fits the task."),
-  priority: z.enum(["low", "medium", "high"]).describe("The suggested priority level."),
-  estimatedDuration: z.number().int().describe("The estimated duration of the task in minutes (e.g., 30, 60, 120)."),
-});
-
-// The model will return an array of suggestions
-const taskParser = StructuredOutputParser.fromZodSchema(
-  z.array(suggestionSchema).describe("An array of 3 to 5 distinct task suggestions.")
-);
-
-
-// Define the Prompt Template
-const taskPromptTemplate = `
-You are an expert personal productivity assistant. Your goal is to suggest 3-5 distinct, actionable tasks for a user's to-do list based on their recent activity and current goals.
-
-Use the provided JSON Schema to format your entire response.
-
-Current Day: {currentDay}
-User Goals: {userGoals}
-Recent Tasks (for context): {recentTasks}
-
-Based on this context, generate new, high-value task suggestions.
-
-FORMAT INSTRUCTIONS:
-{formatInstructions}
-`;
-
-const taskPrompt = new PromptTemplate({
-  template: taskPromptTemplate,
-  inputVariables: ["currentDay", "userGoals", "recentTasks"],
-  partialVariables: { formatInstructions: taskParser.getFormatInstructions() },
-});
-
-
-// Implement the Service Function (Retaining the original for completeness)
-/*
-const generateTaskSuggestions = async (
-  recentTasks: Task[],
-  currentDay: string,
-  userGoals: string[]
-): Promise<AITaskSuggestion[]> => {
-  // ... (existing logic) ...
-};
-*/
-
-
-// =======================================================
-// --- Note Suggestion Logic (NEW) ---
-// =======================================================
-
+// --- 1. Define Schemas/Parsers for Note Suggestion (Existing) ---
 const noteSuggestionSchema = z.object({
-  suggestedTitle: z.string().describe("A brief, descriptive, and punchy title for the note, ideally under 10 words."),
-  suggestedTags: z.array(z.string()).describe("An array of 3 to 5 relevant keywords/tags for the note content."),
+  suggestedTitle: z.string().describe("A concise title for the suggested note."),
+  suggestedTags: z.array(z.string()).describe("A list of relevant tags for the note."),
 });
-
 const noteParser = StructuredOutputParser.fromZodSchema(noteSuggestionSchema);
 
+// --- 2. Prompt Template for Note Suggestion (Existing) ---
 const notePromptTemplate = `
-You are an expert note-taking assistant. Your task is to analyze the provided note content and current title to suggest a better, more concise title and a list of relevant tags.
+You are an expert AI note assistant. Your task is to analyze the provided note content and current title to suggest a better, more concise title and a list of relevant tags.
 
 Current Title: "{currentTitle}"
 Note Content:
@@ -101,7 +44,36 @@ const notePrompt = new PromptTemplate({
   partialVariables: { formatInstructions: noteParser.getFormatInstructions() },
 });
 
-// New function to generate suggestions for a single note
+// --- 3. Grammar/Spelling Fix Logic (NEW) ---
+const grammarPromptTemplate = `
+You are an expert copyeditor. Your task is to correct any grammar mistakes, fix spelling errors, improve syntax, and generally polish the following text to professional standards. Do not change the core meaning or structure of the text.
+
+TEXT TO FIX:
+---
+{textToFix}
+---
+
+Provide ONLY the corrected, polished version of the text. Do not include any commentary, explanations, or surrounding quotes.
+`;
+
+const fixGrammarAndSpelling = async (
+    textToFix: string
+): Promise<string | null> => {
+    
+    // Using a direct string invocation since the output is unstructured (just the corrected text)
+    const input = grammarPromptTemplate.replace("{textToFix}", textToFix);
+
+    try {
+        const response = await llm.invoke(input);
+        // We expect the model to return only the corrected text
+        return response.content as string; 
+    } catch (error) {
+        console.error("Gemini failed to fix grammar and spelling:", error);
+        return null;
+    }
+};
+
+// --- 4. Existing Note Suggestion Function ---
 export interface NoteSuggestion {
   suggestedTitle: string;
   suggestedTags: string[];
@@ -128,8 +100,8 @@ const generateNoteSuggestion = async (
 };
 
 
-// --- 4. Export the Service ---
-export const aiService = { 
-  // generateTaskSuggestions, // Keep or remove based on your app's needs
+// --- 5. Export the Service ---
+export const aiService = {
   generateNoteSuggestion,
+  fixGrammarAndSpelling, // <-- NEW EXPORT
 };
