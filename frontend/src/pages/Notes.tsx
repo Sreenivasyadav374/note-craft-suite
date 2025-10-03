@@ -409,7 +409,7 @@ export default function NotesPage() {
                   className="mr-2 px-2"
                   size="sm"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-1" /> **Back**
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Back
                 </Button>
                 <h3 className="font-semibold text-lg truncate">
                   {notes.find(n => n.id === activeFolderId)?.title || "Root"}
@@ -442,7 +442,7 @@ export default function NotesPage() {
                 variant="outline"
                 className="flex-1 border-primary text-primary hover:bg-primary/10 transition-spring"
               >
-                <FolderPlus className="h-4 w-4 mr-1" /> **Folder**
+                <FolderPlus className="h-4 w-4 mr-1" /> Folder
               </Button>
             </div>
 
@@ -508,7 +508,27 @@ export default function NotesPage() {
                         // FIX: Reduced padding and margins for a compact card
                         <CardContent className="py-2"> 
                             <p className="text-sm text-muted-foreground line-clamp-2 mb-1"> {/* FIX: Reduced mb-3 to mb-1 */}
-                                {item.content || "No content"}
+                                {item.content ? 
+                          (() => {
+                            // Convert HTML to readable preview
+                            let preview = item.content
+                              // Convert task items
+                              .replace(/<li data-type="taskItem"[^>]*data-checked="true"[^>]*>/g, '☑ ')
+                              .replace(/<li data-type="taskItem"[^>]*>/g, '☐ ')
+                              // Convert headings
+                              .replace(/<h[1-6][^>]*>/g, '\n')
+                              .replace(/<\/h[1-6]>/g, ' ')
+                              // Convert paragraphs and breaks
+                              .replace(/<\/p>/g, ' ')
+                              .replace(/<br\s*\/?>/g, ' ')
+                              // Remove all remaining HTML tags
+                              .replace(/<[^>]*>/g, '')
+                              // Clean up whitespace
+                              .replace(/\s+/g, ' ')
+                              .trim();
+                            return preview.substring(0, 150) || "No content";
+                          })()
+                          : "No content"}
                             </p>
                             {item.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mb-1"> {/* FIX: Reduced mb-3 to mb-1 */}
