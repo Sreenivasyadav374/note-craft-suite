@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import ProfileDrawer from "@/components/ProfileDrawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 // Assuming you renamed llmModel.ts to aiService.ts and updated it
 import { aiService } from '../utils/aiService';
@@ -612,36 +613,22 @@ export default function NotesPage() {
                 
                 <CardContent className="p-6 h-full">
                   {/* Content Area (Hidden for folders) */}
-                  {selectedNote.type === 'file' ? (
-                    isEditing ? (
-                      <Textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        placeholder="Start writing your note..."
-                        className="w-full h-full border-0 bg-transparent resize-none focus:ring-0 text-base leading-relaxed"
-                      />
-                    ) : (
-                      <div className="h-full overflow-y-auto">
-                        <div className="whitespace-pre-wrap text-base leading-relaxed">
-                          {selectedNote.content || (
-                            <span className="text-muted-foreground italic">
-                              This note is empty. Click Edit to add content.
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  ) : (
-                    // Folder Content Placeholder
-                    <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                            <Folder className="h-16 w-16 mx-auto mb-4 text-yellow-500/80"/>
-                            <h3 className="text-2xl font-bold">This is a folder.</h3>
-                            <p className="text-muted-foreground">You can't write content here. Click **Edit** to rename it.</p>
-                            <p className="text-muted-foreground">Use the sidebar to navigate into the folder.</p>
-                        </div>
-                    </div>
-                  )}
+                  {isEditing ? (
+                                      <RichTextEditor
+                                        content={editContent}
+                                        onChange={setEditContent}
+                                        placeholder="Start writing your note..."
+                                      />
+                                    ) : (
+                                      <div className="h-full overflow-y-auto">
+                                        <div 
+                                          className="prose prose-sm max-w-none text-base leading-relaxed"
+                                          dangerouslySetInnerHTML={{ 
+                                            __html: selectedNote.content || '<span class="text-muted-foreground italic">This note is empty. Click Edit to add content.</span>' 
+                                          }}
+                                        />
+                                      </div>
+                                    )}
                 </CardContent>
               </Card>
             ) : (
