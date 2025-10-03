@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@react-oauth/google": "^0.12.2",
+    "@tailwindcss/typography": "^0.5.19",
     "@tiptap/extension-image": "^3.6.3",
     "@tiptap/extension-task-item": "^3.6.3",
     "@tiptap/extension-task-list": "^3.6.3",
