@@ -278,7 +278,25 @@ const NotesApp = () => {
                     <CardContent className="pt-0">
                       <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
                         {note.content ? 
-                          note.content.replace(/<[^>]*>/g, '').substring(0, 150) || "No content" 
+                          (() => {
+                            // Convert HTML to readable preview
+                            let preview = note.content
+                              // Convert task items
+                              .replace(/<li data-type="taskItem"[^>]*data-checked="true"[^>]*>/g, '☑ ')
+                              .replace(/<li data-type="taskItem"[^>]*>/g, '☐ ')
+                              // Convert headings
+                              .replace(/<h[1-6][^>]*>/g, '\n')
+                              .replace(/<\/h[1-6]>/g, ' ')
+                              // Convert paragraphs and breaks
+                              .replace(/<\/p>/g, ' ')
+                              .replace(/<br\s*\/?>/g, ' ')
+                              // Remove all remaining HTML tags
+                              .replace(/<[^>]*>/g, '')
+                              // Clean up whitespace
+                              .replace(/\s+/g, ' ')
+                              .trim();
+                            return preview.substring(0, 150) || "No content";
+                          })()
                           : "No content"}
                       </p>
                       {note.tags.length > 0 && (
