@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuthContext } from '../context/AuthContext';
-import { useNavigate, useLocation,Navigate } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
+import { useToast } from '@/hooks/use-toast';
 
 // // Dynamically load the Spline viewer script only once
 // function useSplineScript() {
@@ -18,12 +20,13 @@ import { useNavigate, useLocation,Navigate } from 'react-router-dom';
 
 //   useSplineScript();
 export default function AuthPage() {
-  const { register, login, error, loading, isAuthenticated } = useAuthContext();
+  const { register, login, googleLogin, error, loading, isAuthenticated } = useAuthContext();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
 
    if (isAuthenticated) {
     return <Navigate to="/notes" replace />;
@@ -37,6 +40,27 @@ export default function AuthPage() {
     } else {
       await register(username, password);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      await googleLogin(credentialResponse.credential);
+      toast({ title: 'Success', description: 'Signed in with Google!' });
+    } catch (err: any) {
+      toast({ 
+        title: 'Error', 
+        description: err.message || 'Google sign-in failed', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast({ 
+      title: 'Error', 
+      description: 'Google sign-in failed', 
+      variant: 'destructive' 
+    });
   };
 
   return (
@@ -127,6 +151,30 @@ export default function AuthPage() {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/30"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-4 text-muted-foreground font-medium">Or continue with</span>
+            </div>
+          </div>
+
+          {/* Google Sign-In Button */}
+          <div className="flex justify-center">
+            <div className="w-full [&_div]:w-full [&_div]:justify-center [&_button]:w-full [&_button]:h-12 [&_button]:rounded-xl [&_button]:shadow-elegant [&_button]:hover:shadow-glow [&_button]:transition-all [&_button]:duration-300 [&_button]:hover:scale-[1.02]">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                text={mode === 'login' ? 'signin_with' : 'signup_with'}
+                shape="rectangular"
+              />
+            </div>
+          </div>
 
           {/* Switch Mode */}
           <div className="mt-8 text-center">
