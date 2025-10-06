@@ -92,7 +92,7 @@ export default function NotesPage() {
         setIsLoading(false);
         toast({
           title: "Error",
-          description: "Failed to load notes. Please try again.",
+          description: error.message || "Failed to load notes. Please try again.",
           variant: "destructive",
         });
       });
@@ -145,11 +145,11 @@ export default function NotesPage() {
         title: "New folder created",
         description: "Rename your new folder and start organizing!",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating folder:", error);
       toast({
         title: "Error",
-        description: "Failed to create folder.",
+        description: error.message || "Failed to create folder.",
         variant: "destructive",
       });
     } finally {
@@ -197,11 +197,11 @@ export default function NotesPage() {
         title: "New note created",
         description: "Start writing your thoughts!",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating note:", error);
       toast({
         title: "Error",
-        description: "Failed to create note.",
+        description: error.message || "Failed to create note.",
         variant: "destructive",
       });
     } finally {
@@ -212,16 +212,25 @@ export default function NotesPage() {
   // UPDATED FUNCTION: Delete Note (handles folders and selection state)
   const deleteNote = async (noteId: string) => {
     if (!token) return;
-    await deleteNoteApi(token, noteId);
-    setNotes(notes.filter((note) => note.id !== noteId));
-    if (selectedNote?.id === noteId) {
-      setSelectedNote(null);
-      setIsEditing(false);
+    try {
+      await deleteNoteApi(token, noteId);
+      setNotes(notes.filter((note) => note.id !== noteId));
+      if (selectedNote?.id === noteId) {
+        setSelectedNote(null);
+        setIsEditing(false);
+      }
+      toast({
+        title: "Item deleted",
+        description: "Item has been successfully removed.",
+      });
+    } catch (error: any) {
+      console.error("Error deleting item:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete item.",
+        variant: "destructive",
+      });
     }
-    toast({
-      title: "Item deleted",
-      description: "Item has been successfully removed.",
-    });
   };
 
   // --- EDITING AND SAVING ---
@@ -237,44 +246,53 @@ export default function NotesPage() {
   const saveNote = async () => {
     if (!selectedNote || !token) return;
 
-    const tagsArray = editTags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
-    const contentToSave = selectedNote.type === "file" ? editContent : ""; // Folders have no content
+    try {
+      const tagsArray = editTags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+      const contentToSave = selectedNote.type === "file" ? editContent : ""; // Folders have no content
 
-    // Use updateNote with all necessary fields
-    const updated = await updateNote(
-      token,
-      selectedNote.id,
-      editTitle.trim() ||
-        (selectedNote.type === "folder" ? "Untitled Folder" : "Untitled Note"),
-      contentToSave,
-      tagsArray,
-      selectedNote.type, // Pass existing type
-      selectedNote.parentId // Pass existing parentId
-    );
+      // Use updateNote with all necessary fields
+      const updated = await updateNote(
+        token,
+        selectedNote.id,
+        editTitle.trim() ||
+          (selectedNote.type === "folder" ? "Untitled Folder" : "Untitled Note"),
+        contentToSave,
+        tagsArray,
+        selectedNote.type, // Pass existing type
+        selectedNote.parentId // Pass existing parentId
+      );
 
-    const updatedNote: Note = {
-      id: updated._id,
-      title: updated.title,
-      content: updated.content,
-      tags: updated.tags || [],
-      createdAt: updated.createdAt ? new Date(updated.createdAt) : new Date(),
-      updatedAt: updated.updatedAt ? new Date(updated.updatedAt) : new Date(),
-      type: updated.type,
-      parentId: updated.parentId || null,
-    };
+      const updatedNote: Note = {
+        id: updated._id,
+        title: updated.title,
+        content: updated.content,
+        tags: updated.tags || [],
+        createdAt: updated.createdAt ? new Date(updated.createdAt) : new Date(),
+        updatedAt: updated.updatedAt ? new Date(updated.updatedAt) : new Date(),
+        type: updated.type,
+        parentId: updated.parentId || null,
+      };
 
-    setNotes(
-      notes.map((note) => (note.id === selectedNote.id ? updatedNote : note))
-    );
-    setSelectedNote(updatedNote);
-    setIsEditing(false);
-    toast({
-      title: "Item saved",
-      description: "Your changes have been saved successfully.",
-    });
+      setNotes(
+        notes.map((note) => (note.id === selectedNote.id ? updatedNote : note))
+      );
+      setSelectedNote(updatedNote);
+      setIsEditing(false);
+      toast({
+        title: "Item saved",
+        description: "Your changes have been saved successfully.",
+      });
+    } catch (error: any) {
+      console.error("Error saving item:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save changes.",
+        variant: "destructive",
+      });
+    }
   };
 
   const cancelEditing = () => {

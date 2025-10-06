@@ -85,10 +85,23 @@ export async function googleLogin(credential: string) {
 }
 
 export async function getNotes(token: string) {
-  const res = await fetch(`${API_URL}/notes`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  return res.json();
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/notes`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
+      const error = await res.json().catch(() => ({ message: 'Failed to fetch notes' }));
+      throw new Error(error.message || 'Failed to fetch notes');
+    }
+    
+    return res.json();
+  } catch (error: any) {
+    throw new Error(error.message || 'Unable to connect to server. Please try again later.');
+  }
 }
 
 export async function createNote(
@@ -99,22 +112,35 @@ export async function createNote(
   type: 'file' | 'folder' = 'file', // <-- New: Type with default 'file'
   parentId: string | null = null // <-- New: Optional parent folder ID
 ) {
-  const res = await fetch(`${API_URL}/notes`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-    // Include all new fields in the request body
-    body: JSON.stringify({ 
-      title, 
-      content, 
-      tags,
-      type,
-      parentId 
-    })
-  });
-  return res.json();
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/notes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      // Include all new fields in the request body
+      body: JSON.stringify({ 
+        title, 
+        content, 
+        tags,
+        type,
+        parentId 
+      })
+    });
+    
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
+      const error = await res.json().catch(() => ({ message: `Failed to create ${type}` }));
+      throw new Error(error.message || `Failed to create ${type}`);
+    }
+    
+    return res.json();
+  } catch (error: any) {
+    throw new Error(error.message || 'Unable to connect to server. Please try again later.');
+  }
 }
 
 export async function updateNote(
@@ -126,28 +152,60 @@ export async function updateNote(
   type?: 'file' | 'folder', // <-- NEW: Item type
   parentId?: string | null // <-- NEW: Parent folder ID
 ) {
-  const res = await fetch(`${API_URL}/notes/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-    // The request body now includes 'tags', 'type', and 'parentId'
-    body: JSON.stringify({ 
-      title, 
-      content, 
-      tags, 
-      type, // Pass item type (e.g., 'file' or 'folder')
-      parentId // Pass parent folder ID
-    })
-  });
-  return res.json();
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/notes/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      // The request body now includes 'tags', 'type', and 'parentId'
+      body: JSON.stringify({ 
+        title, 
+        content, 
+        tags, 
+        type, // Pass item type (e.g., 'file' or 'folder')
+        parentId // Pass parent folder ID
+      })
+    });
+    
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
+      if (res.status === 404) {
+        throw new Error('Item not found. It may have been deleted.');
+      }
+      const error = await res.json().catch(() => ({ message: 'Failed to update item' }));
+      throw new Error(error.message || 'Failed to update item');
+    }
+    
+    return res.json();
+  } catch (error: any) {
+    throw new Error(error.message || 'Unable to connect to server. Please try again later.');
+  }
 }
 
 export async function deleteNote(token: string, id: string) {
-  const res = await fetch(`${API_URL}/notes/${id}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  return res.status === 204;
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/notes/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
+      if (res.status === 404) {
+        throw new Error('Item not found. It may have been deleted.');
+      }
+      const error = await res.json().catch(() => ({ message: 'Failed to delete item' }));
+      throw new Error(error.message || 'Failed to delete item');
+    }
+    
+    return res.status === 204;
+  } catch (error: any) {
+    throw new Error(error.message || 'Unable to connect to server. Please try again later.');
+  }
 }
