@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthContext } from '../context/AuthContext';
 import { getNotes, createNote, updateNote, deleteNote as deleteNoteApi } from '../lib/api';
-import { Search, Plus, FileText, Trash2, Edit3, Save, X, Lightbulb, Bell, Calendar, Download } from "lucide-react";
+import { Search, Plus, FileText, Trash2, CreditCard as Edit3, Save, X, Lightbulb, Bell, Calendar, Download } from "lucide-react";
 import { notificationService } from '../services/notificationService';
 import { reminderService } from '../services/reminderService';
 import { calendarService } from '../services/calendarService';
