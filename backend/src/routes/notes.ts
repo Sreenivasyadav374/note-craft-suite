@@ -23,43 +23,43 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
 
 // Create a note or folder
 router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
-  // DESTRUCTURE NEW FIELDS: tags, type, and parentId
-  const { title, content, tags, type, parentId } = req.body;
-  
-  const note = new Note({ 
-    title, 
-    content, 
-    tags, // <-- Correctly passing tags
-    type, // <-- Correctly passing type
-    parentId, // <-- Correctly passing parentId
-    user: req.userId 
+  const { title, content, tags, type, parentId, reminderDate } = req.body;
+
+  const note = new Note({
+    title,
+    content,
+    tags,
+    type,
+    parentId,
+    reminderDate: reminderDate ? new Date(reminderDate) : null,
+    notificationSent: false,
+    user: req.userId
   });
-  
+
   await note.save();
   res.status(201).json(note);
 });
 
 // Update a note or folder
 router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
-  // DESTRUCTURE NEW FIELDS: tags, type, and parentId
-  const { title, content, tags, type, parentId } = req.body;
-  
-  // Create an update object with all potential fields
-  const updateFields: any = { 
-    title, 
-    content, 
-    tags, 
-    type, 
-    parentId 
+  const { title, content, tags, type, parentId, reminderDate } = req.body;
+
+  const updateFields: any = {
+    title,
+    content,
+    tags,
+    type,
+    parentId,
+    reminderDate: reminderDate ? new Date(reminderDate) : null,
+    notificationSent: false
   };
-  
-  // Use findOneAndUpdate to save all fields
+
   const note = await Note.findOneAndUpdate(
     { _id: req.params.id, user: req.userId },
     updateFields,
     { new: true }
   );
-  
+
   if (!note) return res.status(404).json({ error: 'Item not found' });
   res.json(note);
 });
@@ -85,7 +85,27 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response)
   }
 
   // 3. Success response
-  res.status(204).send(); // 204 No Content is the standard response for successful deletion
+  res.status(204).send();
+});
+
+router.get('/reminders/pending', authenticateToken, async (req: AuthRequest, res: Response) => {
+  const now = new Date();
+  const notes = await Note.find({
+    user: req.userId,
+    reminderDate: { $lte: now, $ne: null },
+    notificationSent: false
+  });
+  res.json(notes);
+});
+
+router.post('/reminders/:id/mark-sent', authenticateToken, async (req: AuthRequest, res: Response) => {
+  const note = await Note.findOneAndUpdate(
+    { _id: req.params.id, user: req.userId },
+    { notificationSent: true },
+    { new: true }
+  );
+  if (!note) return res.status(404).json({ error: 'Note not found' });
+  res.json(note);
 });
 
 export default router;

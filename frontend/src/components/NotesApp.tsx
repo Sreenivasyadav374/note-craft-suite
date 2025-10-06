@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import { useAuthContext } from '../context/AuthContext';
 import { getNotes, createNote, updateNote, deleteNote as deleteNoteApi } from '../lib/api';
-import { Search, Plus, FileText, Trash2, Edit3, Save, X, Lightbulb } from "lucide-react";
+import { Search, Plus, FileText, Trash2, Edit3, Save, X, Lightbulb, Bell, Calendar, Download } from "lucide-react";
+import { notificationService } from '../services/notificationService';
+import { reminderService } from '../services/reminderService';
+import { calendarService } from '../services/calendarService';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +26,8 @@ interface Note {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
+  reminderDate?: Date | null;
+  notificationSent?: boolean;
 }
 
 const NotesApp = () => {
@@ -27,13 +38,41 @@ const NotesApp = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editTags, setEditTags] = useState("");
-  const [isSuggesting, setIsSuggesting] = useState(false); // NEW: State for AI loading
+  const [editReminderDate, setEditReminderDate] = useState<string>("");
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const { toast } = useToast();
 
 
   const { token, isAuthenticated } = useAuthContext();
 
-  // Load notes from backend on mount or when token changes
+  useEffect(() => {
+    const initNotifications = async () => {
+      const hasPermission = await notificationService.requestPermission();
+      if (hasPermission) {
+        toast({
+          title: "Notifications enabled",
+          description: "You'll receive reminders for your notes.",
+        });
+      }
+    };
+
+    if (isAuthenticated) {
+      initNotifications();
+    }
+  }, [isAuthenticated, toast]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    notificationService.startReminderCheck(token, async () => {
+      await reminderService.checkPendingReminders(token);
+    });
+
+    return () => {
+      notificationService.stopReminderCheck();
+    };
+  }, [token]);
+
   useEffect(() => {
     if (!token) return;
     getNotes(token).then(data => {
@@ -45,6 +84,8 @@ const NotesApp = () => {
         tags: note.tags || [],
         createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
         updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
+        reminderDate: note.reminderDate ? new Date(note.reminderDate) : null,
+        notificationSent: note.notificationSent || false,
       }));
       setNotes(parsed);
     });
@@ -60,6 +101,8 @@ const NotesApp = () => {
       tags: newNote.tags || [],
       createdAt: newNote.createdAt ? new Date(newNote.createdAt) : new Date(),
       updatedAt: newNote.updatedAt ? new Date(newNote.updatedAt) : new Date(),
+      reminderDate: newNote.reminderDate ? new Date(newNote.reminderDate) : null,
+      notificationSent: newNote.notificationSent || false,
     };
     setNotes([parsedNote, ...notes]);
     setSelectedNote(parsedNote);
@@ -93,6 +136,7 @@ const NotesApp = () => {
     setEditTitle(note.title);
     setEditContent(note.content);
     setEditTags(note.tags.join(", "));
+    setEditReminderDate(note.reminderDate ? new Date(note.reminderDate).toISOString().slice(0, 16) : "");
   };
 
   const saveNote = async () => {
@@ -100,8 +144,18 @@ const NotesApp = () => {
     
     // Parse tags from comma-separated string back to array
     const tagsArray = editTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+    const reminderDateValue = editReminderDate ? new Date(editReminderDate).toISOString() : null;
 
-    const updated = await updateNote(token, selectedNote.id, editTitle.trim() || "Untitled Note", editContent, tagsArray);
+    const updated = await updateNote(
+      token,
+      selectedNote.id,
+      editTitle.trim() || "Untitled Note",
+      editContent,
+      tagsArray,
+      undefined,
+      undefined,
+      reminderDateValue
+    );
     const updatedNote: Note = {
       id: updated._id,
       title: updated.title,
@@ -109,6 +163,8 @@ const NotesApp = () => {
       tags: updated.tags || [],
       createdAt: updated.createdAt ? new Date(updated.createdAt) : new Date(),
       updatedAt: updated.updatedAt ? new Date(updated.updatedAt) : new Date(),
+      reminderDate: updated.reminderDate ? new Date(updated.reminderDate) : null,
+      notificationSent: updated.notificationSent || false,
     };
 
     setNotes(notes.map(note => 
@@ -128,6 +184,7 @@ const NotesApp = () => {
       setEditTitle(selectedNote.title);
       setEditContent(selectedNote.content);
       setEditTags(selectedNote.tags.join(", "));
+      setEditReminderDate(selectedNote.reminderDate ? new Date(selectedNote.reminderDate).toISOString().slice(0, 16) : "");
     }
   };
 
@@ -184,6 +241,46 @@ const NotesApp = () => {
     }
   };
 
+  const exportToCalendar = (provider: 'google' | 'outlook' | 'apple' | 'ics') => {
+    if (!selectedNote || !selectedNote.reminderDate) {
+      toast({
+        title: "No reminder set",
+        description: "Please set a reminder date before exporting to calendar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const startDate = new Date(selectedNote.reminderDate);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+
+    const event = {
+      title: selectedNote.title,
+      description: selectedNote.content.replace(/<[^>]*>/g, '').substring(0, 500),
+      startDate,
+      endDate,
+    };
+
+    switch (provider) {
+      case 'google':
+        calendarService.addToGoogleCalendar(event);
+        break;
+      case 'outlook':
+        calendarService.addToOutlookCalendar(event);
+        break;
+      case 'apple':
+        calendarService.addToAppleCalendar(event);
+        break;
+      case 'ics':
+        calendarService.downloadICSFile(event);
+        break;
+    }
+
+    toast({
+      title: "Calendar export initiated",
+      description: `Opening ${provider} calendar...`,
+    });
+  };
 
   const filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -367,32 +464,94 @@ const NotesApp = () => {
                           </Button>
                         </>
                       ) : (
-                        <Button onClick={() => startEditing(selectedNote)} size="sm" className="bg-gradient-primary hover:opacity-90">
-                          <Edit3 className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
+                        <>
+                          {selectedNote.reminderDate && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  Export
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => exportToCalendar('google')}>
+                                  Google Calendar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => exportToCalendar('outlook')}>
+                                  Outlook Calendar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => exportToCalendar('apple')}>
+                                  Apple Calendar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => exportToCalendar('ics')}>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Download ICS
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                          <Button onClick={() => startEditing(selectedNote)} size="sm" className="bg-gradient-primary hover:opacity-90">
+                            <Edit3 className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
                   
                   {isEditing && (
-                    <div className="mt-4">
+                    <div className="mt-4 space-y-3">
                       <Input
                         value={editTags}
                         onChange={(e) => setEditTags(e.target.value)}
                         placeholder="Tags (comma separated)..."
                         className="border-0 bg-transparent"
                       />
+                      <div className="flex items-center gap-2">
+                        <Bell className="h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="datetime-local"
+                          value={editReminderDate}
+                          onChange={(e) => setEditReminderDate(e.target.value)}
+                          className="border-0 bg-transparent flex-1"
+                          placeholder="Set reminder..."
+                        />
+                        {editReminderDate && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditReminderDate("")}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   )}
                   
-                  {!isEditing && selectedNote.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      {selectedNote.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="bg-primary/10 border-primary/30">
-                          {tag}
-                        </Badge>
-                      ))}
+                  {!isEditing && (
+                    <div className="mt-4 space-y-2">
+                      {selectedNote.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedNote.tags.map((tag, index) => (
+                            <Badge key={index} variant="outline" className="bg-primary/10 border-primary/30">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      {selectedNote.reminderDate && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Bell className="h-4 w-4" />
+                          <span>
+                            Reminder: {new Date(selectedNote.reminderDate).toLocaleString()}
+                          </span>
+                          {selectedNote.notificationSent && (
+                            <Badge variant="secondary" className="text-xs">Sent</Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardHeader>

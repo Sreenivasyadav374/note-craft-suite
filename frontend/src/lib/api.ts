@@ -144,13 +144,14 @@ export async function createNote(
 }
 
 export async function updateNote(
-  token: string, 
-  id: string, 
-  title: string, 
-  content: string, 
-  tags?: string[], // Already present
-  type?: 'file' | 'folder', // <-- NEW: Item type
-  parentId?: string | null // <-- NEW: Parent folder ID
+  token: string,
+  id: string,
+  title: string,
+  content: string,
+  tags?: string[],
+  type?: 'file' | 'folder',
+  parentId?: string | null,
+  reminderDate?: string | null
 ) {
   try {
     const res = await fetchWithTimeout(`${API_URL}/notes/${id}`, {
@@ -159,16 +160,16 @@ export async function updateNote(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`
       },
-      // The request body now includes 'tags', 'type', and 'parentId'
-      body: JSON.stringify({ 
-        title, 
-        content, 
-        tags, 
-        type, // Pass item type (e.g., 'file' or 'folder')
-        parentId // Pass parent folder ID
+      body: JSON.stringify({
+        title,
+        content,
+        tags,
+        type,
+        parentId,
+        reminderDate
       })
     });
-    
+
     if (!res.ok) {
       if (res.status === 401) {
         throw new Error('Session expired. Please log in again.');
@@ -179,7 +180,7 @@ export async function updateNote(
       const error = await res.json().catch(() => ({ message: 'Failed to update item' }));
       throw new Error(error.message || 'Failed to update item');
     }
-    
+
     return res.json();
   } catch (error: any) {
     throw new Error(error.message || 'Unable to connect to server. Please try again later.');
