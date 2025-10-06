@@ -3,6 +3,7 @@ import { useAuthContext } from '../context/AuthContext';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useToast } from '@/hooks/use-toast';
+import { Spinner } from '@/components/ui/spinner';
 
 // // Dynamically load the Spline viewer script only once
 // function useSplineScript() {
@@ -24,6 +25,7 @@ export default function AuthPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -43,6 +45,7 @@ export default function AuthPage() {
   };
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
+    setGoogleLoading(true);
     try {
       await googleLogin(credentialResponse.credential);
       toast({ title: 'Success', description: 'Signed in with Google!' });
@@ -52,10 +55,13 @@ export default function AuthPage() {
         description: err.message || 'Google sign-in failed', 
         variant: 'destructive' 
       });
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
   const handleGoogleError = () => {
+    setGoogleLoading(false);
     toast({ 
       title: 'Error', 
       description: 'Google sign-in failed', 
@@ -164,16 +170,23 @@ export default function AuthPage() {
 
           {/* Google Sign-In Button */}
           <div className="flex justify-center">
-            <div className="w-full [&_div]:w-full [&_div]:justify-center [&_button]:w-full [&_button]:h-12 [&_button]:rounded-xl [&_button]:shadow-elegant [&_button]:hover:shadow-glow [&_button]:transition-all [&_button]:duration-300 [&_button]:hover:scale-[1.02]">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                theme="outline"
-                size="large"
-                text={mode === 'login' ? 'signin_with' : 'signup_with'}
-                shape="rectangular"
-              />
-            </div>
+            {googleLoading ? (
+              <div className="w-full h-12 flex items-center justify-center border border-border/30 rounded-xl bg-white/50">
+                <Spinner className="h-5 w-5 text-primary" />
+                <span className="ml-2 text-sm text-muted-foreground">Signing in with Google...</span>
+              </div>
+            ) : (
+              <div className="w-full [&_div]:w-full [&_div]:justify-center [&_button]:w-full [&_button]:h-12 [&_button]:rounded-xl [&_button]:shadow-elegant [&_button]:hover:shadow-glow [&_button]:transition-all [&_button]:duration-300 [&_button]:hover:scale-[1.02]">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="outline"
+                  size="large"
+                  text={mode === 'login' ? 'signin_with' : 'signup_with'}
+                  shape="rectangular"
+                />
+              </div>
+            )}
           </div>
 
           {/* Switch Mode */}

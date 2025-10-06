@@ -64,6 +64,7 @@ export default function NotesPage() {
   const { toast } = useToast();
   const { token, isAuthenticated, logout, userProfile } = useAuthContext();
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -100,8 +101,9 @@ export default function NotesPage() {
   // NEW FUNCTION: Create Folder
   const createNewFolder = async () => {
     // <-- NOTE: Changed to async
-    if (!token) return;
+    if (!token || isCreating) return;
 
+    setIsCreating(true);
     // 1. Create a placeholder object with default values
     const newFolderData = {
       title: "New Folder",
@@ -150,14 +152,18 @@ export default function NotesPage() {
         description: "Failed to create folder.",
         variant: "destructive",
       });
+    } finally {
+      setIsCreating(false);
     }
   };
   // UPDATED FUNCTION: Create Note (now accepts parentId)
   const createNewNote = async () => {
-    if (!token) return;
+    if (!token || isCreating) return;
 
-    // Assuming createNote API is correctly defined to accept all fields
-    const newNoteApi = await createNote(
+    setIsCreating(true);
+    try {
+      // Assuming createNote API is correctly defined to accept all fields
+      const newNoteApi = await createNote(
       token,
       "Untitled Note",
       "",
@@ -181,16 +187,26 @@ export default function NotesPage() {
       parentId: activeFolderId, // Assign to active folder
     };
 
-    setNotes([parsedNote, ...notes]);
-    setSelectedNote(parsedNote);
-    setIsEditing(true);
-    setEditTitle(parsedNote.title);
-    setEditContent(parsedNote.content);
-    setEditTags("");
-    toast({
-      title: "New note created",
-      description: "Start writing your thoughts!",
-    });
+      setNotes([parsedNote, ...notes]);
+      setSelectedNote(parsedNote);
+      setIsEditing(true);
+      setEditTitle(parsedNote.title);
+      setEditContent(parsedNote.content);
+      setEditTags("");
+      toast({
+        title: "New note created",
+        description: "Start writing your thoughts!",
+      });
+    } catch (error) {
+      console.error("Error creating note:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create note.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   // UPDATED FUNCTION: Delete Note (handles folders and selection state)
@@ -528,16 +544,28 @@ export default function NotesPage() {
             <div className="flex space-x-2 mb-4">
               <Button
                 onClick={createNewNote}
+                disabled={isCreating}
                 className="flex-1 bg-gradient-primary hover:opacity-90 transition-spring"
               >
-                <Plus className="h-4 w-4 mr-1" /> Note
+                {isCreating ? (
+                  <Spinner className="h-4 w-4 mr-1" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-1" />
+                )}
+                Note
               </Button>
               <Button
-                onClick={createNewFolder} // <-- New folder button
+                onClick={createNewFolder}
+                disabled={isCreating}
                 variant="outline"
                 className="flex-1 border-primary text-primary hover:bg-primary/10 transition-spring"
               >
-                <FolderPlus className="h-4 w-4 mr-1" /> Folder
+                {isCreating ? (
+                  <Spinner className="h-4 w-4 mr-1" />
+                ) : (
+                  <FolderPlus className="h-4 w-4 mr-1" />
+                )}
+                Folder
               </Button>
             </div>
 
@@ -714,11 +742,11 @@ export default function NotesPage() {
                           disabled={isSuggesting}
                           className="text-primary hover:text-primary/80 transition-spring"
                         >
-                          <Lightbulb
-                            className={`h-4 w-4 mr-2 ${
-                              isSuggesting ? "animate-pulse" : ""
-                            }`}
-                          />
+                          {isSuggesting ? (
+                            <Spinner className="h-4 w-4 mr-2" />
+                          ) : (
+                            <Lightbulb className="h-4 w-4 mr-2" />
+                          )}
                           {isSuggesting ? "Thinking..." : "AI Suggest"}
                         </Button>
                       )}
