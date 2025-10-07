@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthContext } from '../context/AuthContext';
 import { getNotes, createNote, updateNote, deleteNote as deleteNoteApi } from '../lib/api';
 import { Search, Plus, FileText, Trash2, CreditCard as Edit3, Save, X, Lightbulb, Bell, Calendar, Download, CircleUser as UserCircle, ArrowLeft, Folder, FolderPlus, Sparkles } from "lucide-react";
@@ -36,6 +37,7 @@ interface Note {
 }
 
 const NotesApp = () => {
+  const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -523,6 +525,15 @@ const NotesApp = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <Button
+                onClick={() => navigate("/calendar")}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+              >
+                <Calendar className="h-5 w-5 mr-2" />
+                Calendar
+              </Button>
               <Button
                 onClick={() => setIsDrawerOpen(true)}
                 variant="ghost"
