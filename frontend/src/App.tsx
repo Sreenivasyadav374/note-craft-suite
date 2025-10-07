@@ -44,7 +44,7 @@ const App = () => {
               <Routes>
                 <Route path="/login" element={<AuthPage />} />
                 <Route path="/register" element={<AuthPage />} />
-                <Route path="/notes" element={<RequireAuth><NotesPage /></RequireAuth>} />
+                <Route path="/notes" element={<RequireAuth><NotesApp /></RequireAuth>} />
                 <Route path="/calendar" element={<RequireAuth><CalendarView /></RequireAuth>} />
                 <Route path="/" element={<RequireAuth><NotesPage /></RequireAuth>} />
                 <Route path="/protected" element={<ProtectedExample />} />
