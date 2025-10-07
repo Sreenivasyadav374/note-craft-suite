@@ -24,14 +24,15 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
 // notes.ts
 // Create a note or folder
 router.post('/', auth_1.authenticateToken, async (req, res) => {
-    // DESTRUCTURE NEW FIELDS: tags, type, and parentId
-    const { title, content, tags, type, parentId } = req.body;
+    const { title, content, tags, type, parentId, reminderDate } = req.body;
     const note = new Note_1.default({
         title,
         content,
-        tags, // <-- Correctly passing tags
-        type, // <-- Correctly passing type
-        parentId, // <-- Correctly passing parentId
+        tags,
+        type,
+        parentId,
+        reminderDate: reminderDate ? new Date(reminderDate) : null,
+        notificationSent: false,
         user: req.userId
     });
     await note.save();
@@ -39,17 +40,16 @@ router.post('/', auth_1.authenticateToken, async (req, res) => {
 });
 // Update a note or folder
 router.put('/:id', auth_1.authenticateToken, async (req, res) => {
-    // DESTRUCTURE NEW FIELDS: tags, type, and parentId
-    const { title, content, tags, type, parentId } = req.body;
-    // Create an update object with all potential fields
+    const { title, content, tags, type, parentId, reminderDate } = req.body;
     const updateFields = {
         title,
         content,
         tags,
         type,
-        parentId
+        parentId,
+        reminderDate: reminderDate ? new Date(reminderDate) : null,
+        notificationSent: false
     };
-    // Use findOneAndUpdate to save all fields
     const note = await Note_1.default.findOneAndUpdate({ _id: req.params.id, user: req.userId }, updateFields, { new: true });
     if (!note)
         return res.status(404).json({ error: 'Item not found' });
@@ -71,6 +71,21 @@ router.delete('/:id', auth_1.authenticateToken, async (req, res) => {
         await Note_1.default.deleteMany({ parentId: itemId, user: userId });
     }
     // 3. Success response
-    res.status(204).send(); // 204 No Content is the standard response for successful deletion
+    res.status(204).send();
+});
+router.get('/reminders/pending', auth_1.authenticateToken, async (req, res) => {
+    const now = new Date();
+    const notes = await Note_1.default.find({
+        user: req.userId,
+        reminderDate: { $lte: now, $ne: null },
+        notificationSent: false
+    });
+    res.json(notes);
+});
+router.post('/reminders/:id/mark-sent', auth_1.authenticateToken, async (req, res) => {
+    const note = await Note_1.default.findOneAndUpdate({ _id: req.params.id, user: req.userId }, { notificationSent: true }, { new: true });
+    if (!note)
+        return res.status(404).json({ error: 'Note not found' });
+    res.json(note);
 });
 exports.default = router;

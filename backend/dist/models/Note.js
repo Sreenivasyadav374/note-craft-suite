@@ -37,16 +37,18 @@ const mongoose_1 = __importStar(require("mongoose"));
 const NoteSchema = new mongoose_1.Schema({
     title: { type: String, required: true },
     content: { type: String, required: false, default: "" },
-    tags: { type: [String], required: false, default: [] }, // <-- NEW
+    tags: { type: [String], required: false, default: [] },
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
-    type: { type: String, enum: ['file', 'folder'], default: 'file' }, // <-- NEW (ensures only 'file' or 'folder' are valid)
+    type: { type: String, enum: ['file', 'folder'], default: 'file' },
     parentId: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'Note',
         default: null,
-        required: false // Parent is optional (for root items)
-    }, // <-- NEW
+        required: false
+    },
+    reminderDate: { type: Date, required: false, default: null },
+    notificationSent: { type: Boolean, required: false, default: false }
 }, {
-    timestamps: true // Tracks createdAt and updatedAt
+    timestamps: true
 });
 exports.default = mongoose_1.default.model('Note', NoteSchema);
