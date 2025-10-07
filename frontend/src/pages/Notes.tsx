@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import {
   getNotes,
@@ -21,6 +22,7 @@ import {
   Folder,
   FolderPlus,
   Sparkles,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -49,6 +51,7 @@ interface Note {
 }
 
 export default function NotesPage() {
+  const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]); // Set type to Note[]
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNote, setSelectedNote] = useState<Note | null>(null); // Set type to Note | null
@@ -506,6 +509,15 @@ export default function NotesPage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <Button
+                onClick={() => navigate("/calendar")}
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+              >
+                <CalendarIcon className="h-5 w-5 mr-2" />
+                Calendar
+              </Button>
               <Button
                 onClick={() => setIsDrawerOpen(true)}
                 variant="ghost"
