@@ -1,12 +1,33 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthContext } from '../context/AuthContext';
-import { useNotes } from '../context/NotesContext';
-import { createNote, updateNote, deleteNote as deleteNoteApi } from '../lib/api';
-import { Search, Plus, FileText, Trash2, CreditCard as Edit3, Save, X, Lightbulb, Bell, Calendar, Download, CircleUser as UserCircle, ArrowLeft, Folder, FolderPlus, Sparkles } from "lucide-react";
-import { notificationService } from '../services/notificationService';
-import { reminderService } from '../services/reminderService';
-import { calendarService } from '../services/calendarService';
+import { useAuthContext } from "../context/AuthContext";
+import { useNotes } from "../context/NotesContext";
+import {
+  createNote,
+  updateNote,
+  deleteNote as deleteNoteApi,
+} from "../lib/api";
+import {
+  Search,
+  Plus,
+  FileText,
+  Trash2,
+  CreditCard as Edit3,
+  Save,
+  X,
+  Lightbulb,
+  Bell,
+  Calendar,
+  Download,
+  CircleUser as UserCircle,
+  ArrowLeft,
+  Folder,
+  FolderPlus,
+  Sparkles,
+} from "lucide-react";
+import { notificationService } from "../services/notificationService";
+import { reminderService } from "../services/reminderService";
+import { calendarService } from "../services/calendarService";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +40,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { RichTextEditor } from "./RichTextEditor";
-import { aiService } from '../utils/aiService';
+import { aiService } from "../utils/aiService";
 import ProfileDrawer from "@/components/ProfileDrawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
@@ -85,7 +106,6 @@ const NotesApp = () => {
     };
   }, [token]);
 
-
   const createNewFolder = async () => {
     if (!token || isCreating) return;
 
@@ -115,7 +135,9 @@ const NotesApp = () => {
         tags: savedFolderApi.tags || [],
         createdAt: new Date(savedFolderApi.createdAt),
         updatedAt: new Date(savedFolderApi.updatedAt),
-        reminderDate: savedFolderApi.reminderDate ? new Date(savedFolderApi.reminderDate) : null,
+        reminderDate: savedFolderApi.reminderDate
+          ? new Date(savedFolderApi.reminderDate)
+          : null,
         notificationSent: savedFolderApi.notificationSent || false,
         type: "folder",
         parentId: savedFolderApi.parentId || null,
@@ -160,9 +182,15 @@ const NotesApp = () => {
         title: newNoteApi.title,
         content: newNoteApi.content,
         tags: newNoteApi.tags || [],
-        createdAt: newNoteApi.createdAt ? new Date(newNoteApi.createdAt) : new Date(),
-        updatedAt: newNoteApi.updatedAt ? new Date(newNoteApi.updatedAt) : new Date(),
-        reminderDate: newNoteApi.reminderDate ? new Date(newNoteApi.reminderDate) : null,
+        createdAt: newNoteApi.createdAt
+          ? new Date(newNoteApi.createdAt)
+          : new Date(),
+        updatedAt: newNoteApi.updatedAt
+          ? new Date(newNoteApi.updatedAt)
+          : new Date(),
+        reminderDate: newNoteApi.reminderDate
+          ? new Date(newNoteApi.reminderDate)
+          : null,
         notificationSent: newNoteApi.notificationSent || false,
         type: "file",
         parentId: activeFolderId,
@@ -174,7 +202,11 @@ const NotesApp = () => {
       setEditTitle(parsedNote.title);
       setEditContent(parsedNote.content);
       setEditTags("");
-      setEditReminderDate(parsedNote.reminderDate ? new Date(parsedNote.reminderDate).toISOString().slice(0, 16) : "");
+      setEditReminderDate(
+        parsedNote.reminderDate
+          ? new Date(parsedNote.reminderDate).toISOString().slice(0, 16)
+          : ""
+      );
       toast({
         title: "New note created",
         description: "Start writing your thoughts!",
@@ -195,7 +227,7 @@ const NotesApp = () => {
     if (!token) return;
     try {
       await deleteNoteApi(token, noteId);
-      setNotes(notes.filter(note => note.id !== noteId));
+      setNotes(notes.filter((note) => note.id !== noteId));
       if (selectedNote?.id === noteId) {
         setSelectedNote(null);
         setIsEditing(false);
@@ -220,21 +252,48 @@ const NotesApp = () => {
     setEditTitle(note.title);
     setEditContent(note.content);
     setEditTags(note.tags.join(", "));
-    setEditReminderDate(note.reminderDate ? new Date(note.reminderDate).toISOString().slice(0, 16) : "");
+    if (note.reminderDate) {
+      // Use the existing saved time correctly in local timezone
+      const local = new Date(note.reminderDate);
+      const localISOString = new Date(
+        local.getTime() - local.getTimezoneOffset() * 60000
+      )
+        .toISOString()
+        .slice(0, 16);
+      setEditReminderDate(localISOString);
+    } else {
+      // Default: same day 12:00 PM
+      const today = new Date();
+      today.setHours(12, 0, 0, 0);
+      const defaultISOString = new Date(
+        today.getTime() - today.getTimezoneOffset() * 60000
+      )
+        .toISOString()
+        .slice(0, 16);
+      setEditReminderDate(defaultISOString);
+    }
   };
 
   const saveNote = async () => {
     if (!selectedNote || !token) return;
 
     try {
-      const tagsArray = editTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      const tagsArray = editTags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
       const contentToSave = selectedNote.type === "file" ? editContent : "";
-      const reminderDateValue = editReminderDate ? new Date(editReminderDate).toISOString() : null;
+      const reminderDateValue = editReminderDate
+        ? new Date(editReminderDate).toISOString()
+        : null;
 
       const updated = await updateNote(
         token,
         selectedNote.id,
-        editTitle.trim() || (selectedNote.type === "folder" ? "Untitled Folder" : "Untitled Note"),
+        editTitle.trim() ||
+          (selectedNote.type === "folder"
+            ? "Untitled Folder"
+            : "Untitled Note"),
         contentToSave,
         tagsArray,
         selectedNote.type,
@@ -249,15 +308,17 @@ const NotesApp = () => {
         tags: updated.tags || [],
         createdAt: updated.createdAt ? new Date(updated.createdAt) : new Date(),
         updatedAt: updated.updatedAt ? new Date(updated.updatedAt) : new Date(),
-        reminderDate: updated.reminderDate ? new Date(updated.reminderDate) : null,
+        reminderDate: updated.reminderDate
+          ? new Date(updated.reminderDate)
+          : null,
         notificationSent: updated.notificationSent || false,
         type: updated.type,
         parentId: updated.parentId || null,
       };
 
-      setNotes(notes.map(note =>
-        note.id === selectedNote.id ? updatedNote : note
-      ));
+      setNotes(
+        notes.map((note) => (note.id === selectedNote.id ? updatedNote : note))
+      );
       setSelectedNote(updatedNote);
       setIsEditing(false);
       toast({
@@ -280,7 +341,11 @@ const NotesApp = () => {
       setEditTitle(selectedNote.title);
       setEditContent(selectedNote.content);
       setEditTags(selectedNote.tags.join(", "));
-      setEditReminderDate(selectedNote.reminderDate ? new Date(selectedNote.reminderDate).toISOString().slice(0, 16) : "");
+      setEditReminderDate(
+        selectedNote.reminderDate
+          ? new Date(selectedNote.reminderDate).toISOString().slice(0, 16)
+          : ""
+      );
     }
   };
 
@@ -305,15 +370,22 @@ const NotesApp = () => {
   };
 
   const handleAISuggestion = async () => {
-    if (!selectedNote || selectedNote.type === "folder" || !token || isSuggesting) return;
-    
+    if (
+      !selectedNote ||
+      selectedNote.type === "folder" ||
+      !token ||
+      isSuggesting
+    )
+      return;
+
     const currentTitle = editTitle;
     const currentContent = editContent;
 
     if (currentContent.trim().length < 20) {
       toast({
         title: "Cannot suggest yet",
-        description: "Note content must be at least 20 characters long for AI analysis.",
+        description:
+          "Note content must be at least 20 characters long for AI analysis.",
         variant: "destructive",
       });
       return;
@@ -322,35 +394,43 @@ const NotesApp = () => {
     setIsSuggesting(true);
     toast({
       title: "Generating AI Suggestions...",
-      description: "Gemini is analyzing your note content. This may take a moment.",
+      description:
+        "Gemini is analyzing your note content. This may take a moment.",
       duration: 5000,
     });
 
     try {
-      const suggestions = await aiService.generateNoteSuggestion(currentTitle, currentContent);
+      const suggestions = await aiService.generateNoteSuggestion(
+        currentTitle,
+        currentContent
+      );
 
       if (suggestions) {
         // Apply suggestions to the editing state
         setEditTitle(suggestions.suggestedTitle);
         setEditTags(suggestions.suggestedTags.join(", "));
-        
+
         toast({
           title: "AI Suggestions Applied! ✨",
-          description: `New Title: "${suggestions.suggestedTitle}". New Tags: ${suggestions.suggestedTags.join(', ')}`,
+          description: `New Title: "${
+            suggestions.suggestedTitle
+          }". New Tags: ${suggestions.suggestedTags.join(", ")}`,
         });
       } else {
         toast({
           title: "AI Suggestion Failed",
-          description: "Could not get suggestions. Check the console for errors.",
+          description:
+            "Could not get suggestions. Check the console for errors.",
           variant: "destructive",
         });
       }
     } catch (error) {
-       toast({
-          title: "Error during AI Suggestion",
-          description: "An unexpected error occurred while communicating with the AI service.",
-          variant: "destructive",
-        });
+      toast({
+        title: "Error during AI Suggestion",
+        description:
+          "An unexpected error occurred while communicating with the AI service.",
+        variant: "destructive",
+      });
     } finally {
       setIsSuggesting(false);
     }
@@ -408,7 +488,9 @@ const NotesApp = () => {
     }
   };
 
-  const exportToCalendar = (provider: 'google' | 'outlook' | 'apple' | 'ics') => {
+  const exportToCalendar = (
+    provider: "google" | "outlook" | "apple" | "ics"
+  ) => {
     if (!selectedNote || !selectedNote.reminderDate) {
       toast({
         title: "No reminder set",
@@ -423,22 +505,24 @@ const NotesApp = () => {
 
     const event = {
       title: selectedNote.title,
-      description: selectedNote.content.replace(/<[^>]*>/g, '').substring(0, 500),
+      description: selectedNote.content
+        .replace(/<[^>]*>/g, "")
+        .substring(0, 500),
       startDate,
       endDate,
     };
 
     switch (provider) {
-      case 'google':
+      case "google":
         calendarService.addToGoogleCalendar(event);
         break;
-      case 'outlook':
+      case "outlook":
         calendarService.addToOutlookCalendar(event);
         break;
-      case 'apple':
+      case "apple":
         calendarService.addToAppleCalendar(event);
         break;
-      case 'ics':
+      case "ics":
         calendarService.downloadICSFile(event);
         break;
     }
@@ -473,7 +557,11 @@ const NotesApp = () => {
   const visibleItems = getVisibleItems();
 
   if (!isAuthenticated) {
-    return <div className="p-8 text-center text-lg">Please log in to view your notes.</div>;
+    return (
+      <div className="p-8 text-center text-lg">
+        Please log in to view your notes.
+      </div>
+    );
   }
 
   return (
@@ -488,7 +576,9 @@ const NotesApp = () => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white">NotesApp</h1>
-                <p className="text-white/80">Capture your thoughts beautifully</p>
+                <p className="text-white/80">
+                  Capture your thoughts beautifully
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -676,10 +766,7 @@ const NotesApp = () => {
                                 </Badge>
                               ))}
                               {item.tags.length > 3 && (
-                                <Badge
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
+                                <Badge variant="secondary" className="text-xs">
                                   +{item.tags.length - 3}
                                 </Badge>
                               )}
@@ -715,7 +802,9 @@ const NotesApp = () => {
                         }
                       />
                     ) : (
-                      <CardTitle className="text-2xl">{selectedNote.title}</CardTitle>
+                      <CardTitle className="text-2xl">
+                        {selectedNote.title}
+                      </CardTitle>
                     )}
                     <div className="flex items-center space-x-2">
                       {isEditing && selectedNote.type === "file" && (
@@ -731,17 +820,25 @@ const NotesApp = () => {
                           ) : (
                             <Lightbulb className="h-4 w-4 mr-2" />
                           )}
-                          {isSuggesting ? 'Thinking...' : 'AI Suggest'}
+                          {isSuggesting ? "Thinking..." : "AI Suggest"}
                         </Button>
                       )}
-                      
+
                       {isEditing ? (
                         <>
-                          <Button onClick={saveNote} size="sm" className="bg-gradient-primary hover:opacity-90">
+                          <Button
+                            onClick={saveNote}
+                            size="sm"
+                            className="bg-gradient-primary hover:opacity-90"
+                          >
                             <Save className="h-4 w-4 mr-2" />
                             Save
                           </Button>
-                          <Button onClick={cancelEditing} variant="outline" size="sm">
+                          <Button
+                            onClick={cancelEditing}
+                            variant="outline"
+                            size="sm"
+                          >
                             <X className="h-4 w-4 mr-2" />
                             Cancel
                           </Button>
@@ -757,23 +854,35 @@ const NotesApp = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => exportToCalendar('google')}>
+                                <DropdownMenuItem
+                                  onClick={() => exportToCalendar("google")}
+                                >
                                   Google Calendar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => exportToCalendar('outlook')}>
+                                <DropdownMenuItem
+                                  onClick={() => exportToCalendar("outlook")}
+                                >
                                   Outlook Calendar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => exportToCalendar('apple')}>
+                                <DropdownMenuItem
+                                  onClick={() => exportToCalendar("apple")}
+                                >
                                   Apple Calendar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => exportToCalendar('ics')}>
+                                <DropdownMenuItem
+                                  onClick={() => exportToCalendar("ics")}
+                                >
                                   <Download className="h-4 w-4 mr-2" />
                                   Download ICS
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
-                          <Button onClick={() => startEditing(selectedNote)} size="sm" className="bg-gradient-primary hover:opacity-90">
+                          <Button
+                            onClick={() => startEditing(selectedNote)}
+                            size="sm"
+                            className="bg-gradient-primary hover:opacity-90"
+                          >
                             <Edit3 className="h-4 w-4 mr-2" />
                             Edit
                           </Button>
@@ -818,7 +927,11 @@ const NotesApp = () => {
                       {selectedNote.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {selectedNote.tags.map((tag, index) => (
-                            <Badge key={index} variant="outline" className="bg-primary/10 border-primary/30">
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="bg-primary/10 border-primary/30"
+                            >
                               {tag}
                             </Badge>
                           ))}
@@ -828,17 +941,22 @@ const NotesApp = () => {
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Bell className="h-4 w-4" />
                           <span>
-                            Reminder: {new Date(selectedNote.reminderDate).toLocaleString()}
+                            Reminder:{" "}
+                            {new Date(
+                              selectedNote.reminderDate
+                            ).toLocaleString()}
                           </span>
                           {selectedNote.notificationSent && (
-                            <Badge variant="secondary" className="text-xs">Sent</Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              Sent
+                            </Badge>
                           )}
                         </div>
                       )}
                     </div>
                   )}
                 </CardHeader>
-                
+
                 <CardContent className="p-6 h-full">
                   {isEditing ? (
                     <div className="relative h-full">
@@ -900,11 +1018,17 @@ const NotesApp = () => {
                     <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
                       <FileText className="h-12 w-12 text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold mb-2">Select an item to view</h3>
+                    <h3 className="text-2xl font-bold mb-2">
+                      Select an item to view
+                    </h3>
                     <p className="text-muted-foreground mb-6">
-                      Choose an item from the sidebar or create a new one to get started.
+                      Choose an item from the sidebar or create a new one to get
+                      started.
                     </p>
-                    <Button onClick={createNewNote} className="bg-gradient-primary hover:opacity-90">
+                    <Button
+                      onClick={createNewNote}
+                      className="bg-gradient-primary hover:opacity-90"
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Create New Note
                     </Button>
