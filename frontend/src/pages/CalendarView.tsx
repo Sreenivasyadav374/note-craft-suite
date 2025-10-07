@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
-import { useAuthContext } from "../context/AuthContext";
-import { getNotes } from "../lib/api";
+import { useState } from "react";
+import { useNotes } from "../context/NotesContext";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format, isSameDay, parseISO, isFuture, isPast, isToday } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
 
 interface Note {
   id: string;
@@ -20,46 +18,19 @@ interface Note {
 }
 
 export default function CalendarView() {
-  const [notes, setNotes] = useState<Note[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [isLoading, setIsLoading] = useState(true);
-  const { token } = useAuthContext();
+  const { notes: allNotes, isLoading } = useNotes();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
-  useEffect(() => {
-    if (!token) return;
-    
-    setIsLoading(true);
-    getNotes(token)
-      .then((data: any[]) => {
-        const parsed: Note[] = data
-          .filter((note) => note.reminderDate && note.type === "file")
-          .map((note) => ({
-            id: note._id,
-            title: note.title,
-            content: note.content,
-            reminderDate: note.reminderDate,
-            type: note.type || "file",
-          }));
-        setNotes(parsed);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching notes:", error);
-        setIsLoading(false);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to load reminders",
-          variant: "destructive",
-        });
-      });
-  }, [token, toast]);
+  // Filter notes to only include those with reminders
+  const notes = allNotes.filter(note => note.reminderDate && note.type === "file");
 
   const notesForSelectedDate = notes.filter((note) => {
     if (!note.reminderDate || !selectedDate) return false;
     try {
-      const noteDate = parseISO(note.reminderDate);
+      const noteDate = typeof note.reminderDate === 'string' 
+        ? parseISO(note.reminderDate) 
+        : note.reminderDate;
       return isSameDay(noteDate, selectedDate);
     } catch {
       return false;
@@ -70,15 +41,21 @@ export default function CalendarView() {
     .filter((note) => {
       if (!note.reminderDate) return false;
       try {
-        const noteDate = parseISO(note.reminderDate);
+        const noteDate = typeof note.reminderDate === 'string' 
+          ? parseISO(note.reminderDate) 
+          : note.reminderDate;
         return isFuture(noteDate) || isToday(noteDate);
       } catch {
         return false;
       }
     })
     .sort((a, b) => {
-      const dateA = new Date(a.reminderDate!);
-      const dateB = new Date(b.reminderDate!);
+      const dateA = typeof a.reminderDate === 'string' 
+        ? new Date(a.reminderDate) 
+        : a.reminderDate!;
+      const dateB = typeof b.reminderDate === 'string' 
+        ? new Date(b.reminderDate) 
+        : b.reminderDate!;
       return dateA.getTime() - dateB.getTime();
     })
     .slice(0, 5);
@@ -87,7 +64,9 @@ export default function CalendarView() {
     .filter((note) => note.reminderDate)
     .map((note) => {
       try {
-        return parseISO(note.reminderDate!);
+        return typeof note.reminderDate === 'string' 
+          ? parseISO(note.reminderDate) 
+          : note.reminderDate!;
       } catch {
         return null;
       }
@@ -168,7 +147,9 @@ export default function CalendarView() {
                 </p>
               ) : (
                 upcomingReminders.map((note) => {
-                  const reminderDate = parseISO(note.reminderDate!);
+                  const reminderDate = typeof note.reminderDate === 'string' 
+                    ? parseISO(note.reminderDate) 
+                    : note.reminderDate!;
                   const isPastDue = isPast(reminderDate) && !isToday(reminderDate);
                   
                   return (
@@ -221,7 +202,9 @@ export default function CalendarView() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {notesForSelectedDate.map((note) => {
-                    const reminderDate = parseISO(note.reminderDate!);
+                    const reminderDate = typeof note.reminderDate === 'string' 
+                      ? parseISO(note.reminderDate) 
+                      : note.reminderDate!;
                     return (
                       <Card
                         key={note.id}

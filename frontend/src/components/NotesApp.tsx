@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from '../context/AuthContext';
-import { getNotes, createNote, updateNote, deleteNote as deleteNoteApi } from '../lib/api';
+import { useNotes } from '../context/NotesContext';
+import { createNote, updateNote, deleteNote as deleteNoteApi } from '../lib/api';
 import { Search, Plus, FileText, Trash2, CreditCard as Edit3, Save, X, Lightbulb, Bell, Calendar, Download, CircleUser as UserCircle, ArrowLeft, Folder, FolderPlus, Sparkles } from "lucide-react";
 import { notificationService } from '../services/notificationService';
 import { reminderService } from '../services/reminderService';
@@ -38,7 +39,7 @@ interface Note {
 
 const NotesApp = () => {
   const navigate = useNavigate();
-  const [notes, setNotes] = useState<Note[]>([]);
+  const { notes, setNotes, isLoading: notesLoading } = useNotes();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -51,7 +52,6 @@ const NotesApp = () => {
   const [aiFixTrigger, setAiFixTrigger] = useState(0);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
 
@@ -85,39 +85,6 @@ const NotesApp = () => {
     };
   }, [token]);
 
-  useEffect(() => {
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    getNotes(token)
-      .then(data => {
-        const parsed = data.map((note: any) => ({
-          id: note._id,
-          title: note.title,
-          content: note.content,
-          tags: note.tags || [],
-          createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
-          updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
-          reminderDate: note.reminderDate ? new Date(note.reminderDate) : null,
-          notificationSent: note.notificationSent || false,
-          type: note.type || "file",
-          parentId: note.parentId || null,
-        }));
-        setNotes(parsed);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching notes:", error);
-        setIsLoading(false);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to load notes. Please try again.",
-          variant: "destructive",
-        });
-      });
-  }, [token, toast]);
 
   const createNewFolder = async () => {
     if (!token || isCreating) return;
@@ -615,7 +582,7 @@ const NotesApp = () => {
               </Button>
             </div>
 
-            {isLoading ? (
+            {notesLoading ? (
               <div className="flex justify-center items-center h-48">
                 <Spinner />
               </div>

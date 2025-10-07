@@ -13,6 +13,7 @@ import CalendarView from "./pages/CalendarView";
 import ProtectedExample from "./pages/ProtectedExample";
 import NotesApp from "./components/NotesApp";
 import { useAuthContext, AuthProvider } from "./context/AuthContext";
+import { NotesProvider } from "./context/NotesContext";
 
 // Replace with your actual Google Client ID
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -36,23 +37,25 @@ const App = () => {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<AuthPage />} />
-                <Route path="/register" element={<AuthPage />} />
-                <Route path="/notes" element={<RequireAuth><NotesApp /></RequireAuth>} />
-                <Route path="/calendar" element={<RequireAuth><CalendarView /></RequireAuth>} />
-                <Route path="/" element={<RequireAuth><NotesPage /></RequireAuth>} />
-                <Route path="/protected" element={<ProtectedExample />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </QueryClientProvider>
+        <NotesProvider>
+          <QueryClientProvider client={queryClient}>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/login" element={<AuthPage />} />
+                  <Route path="/register" element={<AuthPage />} />
+                  <Route path="/notes" element={<RequireAuth><NotesApp /></RequireAuth>} />
+                  <Route path="/calendar" element={<RequireAuth><CalendarView /></RequireAuth>} />
+                  <Route path="/" element={<RequireAuth><NotesPage /></RequireAuth>} />
+                  <Route path="/protected" element={<ProtectedExample />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </QueryClientProvider>
+        </NotesProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );
