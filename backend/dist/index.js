@@ -11,6 +11,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const auth_1 = __importDefault(require("./routes/auth"));
 const google_auth_1 = __importDefault(require("./routes/google-auth"));
 const notes_1 = __importDefault(require("./routes/notes"));
+const profile_1 = __importDefault(require("./routes/profile"));
 dotenv_1.default.config();
 // Initialize Express app
 const app = (0, express_1.default)();
@@ -55,6 +56,8 @@ app.use('/api/auth', auth_1.default);
 app.use('/api/auth', google_auth_1.default);
 // Maps to: /api/notes
 app.use('/api/notes', notes_1.default);
+// Maps to: /api/profile
+app.use('/api/profile', profile_1.default);
 app.get("/", (req, res) => {
     res.json({ status: "Backend running ✅", version: "1.0.0" });
 });
