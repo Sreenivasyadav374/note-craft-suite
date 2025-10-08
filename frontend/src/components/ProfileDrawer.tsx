@@ -13,6 +13,7 @@ import { decodeJWT } from "../lib/jwt";
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { useToast } from "@/hooks/use-toast";
 import ProfilePictureUpload from "./ProfilePictureUpload";
+import UsageStats from "./UsageStats";
 
 interface ProfileDrawerProps {
   open: boolean;
@@ -138,6 +139,10 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
 
         {isAuthenticated && (
           <>
+            <div className="py-5">
+              <UsageStats />
+            </div>
+
             <div className="py-5 space-y-3">
               <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Your Premium Benefits
