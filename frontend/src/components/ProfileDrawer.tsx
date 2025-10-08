@@ -143,7 +143,7 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
               <UsageStats />
             </div>
 
-            <div className="py-5 space-y-3">
+            {/* <div className="py-5 space-y-3">
               <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Your Premium Benefits
               </h4>
@@ -168,7 +168,7 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
                   </div>
                 </div>
               ))}
-            </div>
+            </div> */}
 
             <div className="space-y-2.5 pt-5 border-t border-border/50">
               <Button
