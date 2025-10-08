@@ -12,6 +12,7 @@ import { useAuthContext } from "../context/AuthContext";
 import { decodeJWT } from "../lib/jwt";
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { useToast } from "@/hooks/use-toast";
+import ProfilePictureUpload from "./ProfilePictureUpload";
 
 interface ProfileDrawerProps {
   open: boolean;
@@ -19,14 +20,18 @@ interface ProfileDrawerProps {
 }
 
 export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
-  const { token, logout, isAuthenticated, googleLogin, userProfile, loading } = useAuthContext();
+  const { token, logout, isAuthenticated, googleLogin, userProfile, loading, updateProfilePicture } = useAuthContext();
   const { toast } = useToast();
-  
+
   const payload = token ? decodeJWT(token) : null;
   const username = userProfile?.name || payload?.username || "User";
   const userEmail = userProfile?.email || payload?.email || "";
   const userPicture = userProfile?.picture;
   const userInitials = username.substring(0, 2).toUpperCase();
+
+  const handleUploadSuccess = (imageUrl: string) => {
+    updateProfilePicture(imageUrl);
+  };
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (credentialResponse.credential) {
@@ -109,26 +114,23 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
             </div>
           ) : (
             <div className="bg-gradient-card rounded-2xl p-5 border border-border/50 shadow-card">
-              <div className="flex items-start gap-4">
-                <Avatar className="h-16 w-16 border-2 border-primary shadow-glow">
-                  <AvatarImage src={userPicture} alt={username} />
-                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xl font-bold">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
+              <ProfilePictureUpload
+                currentPicture={userPicture}
+                username={username}
+                onUploadSuccess={handleUploadSuccess}
+              />
 
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-foreground mb-1 truncate">
-                    {username}
-                  </h3>
-                  {userEmail && (
-                    <p className="text-sm text-muted-foreground mb-2 truncate">{userEmail}</p>
-                  )}
-                  <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 shadow-sm">
-                    <Crown className="h-3 w-3 mr-1" />
-                    Premium User
-                  </Badge>
-                </div>
+              <div className="mt-5 pt-5 border-t border-border/50 text-center">
+                <h3 className="text-xl font-bold text-foreground mb-1">
+                  {username}
+                </h3>
+                {userEmail && (
+                  <p className="text-sm text-muted-foreground mb-3">{userEmail}</p>
+                )}
+                <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 shadow-sm">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Premium User
+                </Badge>
               </div>
             </div>
           )}

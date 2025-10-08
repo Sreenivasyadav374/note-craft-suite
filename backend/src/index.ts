@@ -3,9 +3,10 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 // Assuming these are in backend/src/routes/auth.ts and backend/src/routes/notes.ts
-import authRoutes from './routes/auth'; 
+import authRoutes from './routes/auth';
 import googleAuthRoutes from './routes/google-auth';
 import notesRoutes from './routes/notes';
+import profileRoutes from './routes/profile';
 
 dotenv.config();
 
@@ -63,6 +64,9 @@ app.use('/api/auth', googleAuthRoutes);
 
 // Maps to: /api/notes
 app.use('/api/notes', notesRoutes);
+
+// Maps to: /api/profile
+app.use('/api/profile', profileRoutes);
 
 app.get("/", (req, res) => {
   res.json({ status: "Backend running ✅", version: "1.0.0" });

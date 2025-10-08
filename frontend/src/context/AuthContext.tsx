@@ -14,6 +14,7 @@ export interface AuthContextType {
   login: (username: string, password: string) => Promise<any>;
   googleLogin: (credential: string) => Promise<any>;
   logout: () => void;
+  updateProfilePicture: (pictureUrl: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -141,8 +142,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('userProfile');
   };
 
+  const updateProfilePicture = (pictureUrl: string) => {
+    if (userProfile) {
+      const updatedProfile = { ...userProfile, picture: pictureUrl };
+      setUserProfile(updatedProfile);
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ token, refreshToken: refreshTokenValue, isAuthenticated: !!token, loading, error, initializing, userProfile, register, login, googleLogin, logout }}>
+    <AuthContext.Provider value={{ token, refreshToken: refreshTokenValue, isAuthenticated: !!token, loading, error, initializing, userProfile, register, login, googleLogin, logout, updateProfilePicture }}>
       {!initializing && children}
     </AuthContext.Provider>
   );
