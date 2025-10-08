@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import ProfilePictureUpload from "./ProfilePictureUpload";
 import UsageStats from "./UsageStats";
 import AccountSettings from "./AccountSettings";
+import { LinkedAccounts } from "./LinkedAccounts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ProfileDrawerProps {
@@ -142,9 +143,10 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
         {isAuthenticated && (
           <>
             <Tabs defaultValue="overview" className="py-5">
-              <TabsList className="grid w-full grid-cols-2 mb-5">
+              <TabsList className="grid w-full grid-cols-3 mb-5">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="linked">Accounts</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="space-y-5 mt-0">
@@ -180,6 +182,10 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
 
               <TabsContent value="settings" className="mt-0">
                 <AccountSettings />
+              </TabsContent>
+
+              <TabsContent value="linked" className="mt-0">
+                <LinkedAccounts />
               </TabsContent>
             </Tabs>
 

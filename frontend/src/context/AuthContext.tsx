@@ -118,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = { name: username, email: username };
       setUserProfile(profile);
       localStorage.setItem('userProfile', JSON.stringify(profile));
+      localStorage.setItem('authMethod', 'email');
 
       // Store member since date if not already stored
       if (!localStorage.getItem('memberSince')) {
@@ -158,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         setUserProfile(profile);
         localStorage.setItem('userProfile', JSON.stringify(profile));
+        localStorage.setItem('authMethod', 'google');
       }
 
       // Store member since date if not already stored
