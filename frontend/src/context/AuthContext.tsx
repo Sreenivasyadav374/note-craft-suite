@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { register as apiRegister, login as apiLogin, googleLogin as apiGoogleLogin } from '../lib/api';
+import { register as apiRegister, login as apiLogin, googleLogin as apiGoogleLogin, getProfilePicture } from '../lib/api';
 import { decodeJWT } from '../lib/jwt';
 
 export interface AuthContextType {
@@ -41,6 +41,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Failed to parse user profile', e);
       }
     }
+
+    // Fetch profile picture if token exists
+    if (storedToken) {
+      getProfilePicture(storedToken)
+        .then(profileData => {
+          if (profileData.profilePicture) {
+            const currentProfile = storedProfile ? JSON.parse(storedProfile) : {};
+            const updatedProfile = { ...currentProfile, picture: profileData.profilePicture };
+            setUserProfile(updatedProfile);
+            localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch profile picture on mount:', error);
+        });
+    }
+
     setInitializing(false);
   }, []);
 
@@ -100,6 +117,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = { name: username, email: username };
       setUserProfile(profile);
       localStorage.setItem('userProfile', JSON.stringify(profile));
+
+      // Fetch profile picture after login
+      try {
+        const profileData = await getProfilePicture(res.token);
+        if (profileData.profilePicture) {
+          const updatedProfile = { ...profile, picture: profileData.profilePicture };
+          setUserProfile(updatedProfile);
+          localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile picture:', error);
+      }
     } else if (res.error) {
       setError(res.error);
     }

@@ -193,7 +193,7 @@ export async function deleteNote(token: string, id: string) {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });
-    
+
     if (!res.ok) {
       if (res.status === 401) {
         throw new Error('Session expired. Please log in again.');
@@ -204,8 +204,28 @@ export async function deleteNote(token: string, id: string) {
       const error = await res.json().catch(() => ({ message: 'Failed to delete item' }));
       throw new Error(error.message || 'Failed to delete item');
     }
-    
+
     return res.status === 204;
+  } catch (error: any) {
+    throw new Error(error.message || 'Unable to connect to server. Please try again later.');
+  }
+}
+
+export async function getProfilePicture(token: string) {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/profile/picture`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error('Session expired. Please log in again.');
+      }
+      const error = await res.json().catch(() => ({ message: 'Failed to fetch profile picture' }));
+      throw new Error(error.message || 'Failed to fetch profile picture');
+    }
+
+    return res.json();
   } catch (error: any) {
     throw new Error(error.message || 'Unable to connect to server. Please try again later.');
   }

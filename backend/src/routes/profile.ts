@@ -70,7 +70,7 @@ router.post('/update-picture', upload.single('profilePicture'), authenticateToke
 
 router.get('/picture', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.userId;
+    const userId = (req as any).userId;
 
     const user = await User.findById(userId).select('profilePicture username');
 
