@@ -19,6 +19,7 @@ export default function ProfilePictureUpload({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const userInitials = username.substring(0, 2).toUpperCase();
 
@@ -43,7 +44,7 @@ export default function ProfilePictureUpload({
       });
       return;
     }
-
+    setSelectedFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setPreview(reader.result as string);
@@ -52,18 +53,23 @@ export default function ProfilePictureUpload({
   };
 
   const handleUpload = async () => {
-    if (!preview) return;
+    if (!selectedFile) return;
 
     setUploading(true);
     try {
       const token = localStorage.getItem('token');
+      
+      // CHANGED: Use FormData for multipart upload
+      const formData = new FormData();
+      formData.append('profilePicture', selectedFile);
+
       const response = await fetch('http://localhost:4002/api/profile/update-picture', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          // CHANGED: REMOVED 'Content-Type': 'application/json'
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ profilePicture: preview }),
+        body: formData, // CHANGED: Send FormData
       });
 
       if (!response.ok) {
@@ -72,7 +78,10 @@ export default function ProfilePictureUpload({
 
       const data = await response.json();
       onUploadSuccess(data.profilePicture);
+      
+      // Cleanup
       setPreview(null);
+      setSelectedFile(null); // ADDED: Clear file state on success
 
       toast({
         title: 'Success',
@@ -117,6 +126,7 @@ export default function ProfilePictureUpload({
           )}
 
           <button
+          title='Camera'
             onClick={() => fileInputRef.current?.click()}
             className="absolute bottom-0 right-0 p-2 bg-primary rounded-full shadow-lg hover:bg-primary/90 transition-smooth border-4 border-background"
             disabled={uploading}
@@ -126,6 +136,7 @@ export default function ProfilePictureUpload({
         </div>
 
         <input
+        title='Upload'
           ref={fileInputRef}
           type="file"
           accept="image/*"
