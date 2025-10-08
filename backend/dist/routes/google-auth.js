@@ -33,8 +33,16 @@ router.post('/google', async (req, res) => {
             const randomPassword = crypto_1.default.randomBytes(32).toString('hex');
             user = new User_1.default({
                 username: email,
-                password: randomPassword // Not used for Google auth
+                password: randomPassword, // Not used for Google auth
+                googleId,
+                authProvider: 'google'
             });
+            await user.save();
+        }
+        else if (!user.googleId) {
+            // Link Google account to existing user
+            user.googleId = googleId;
+            user.authProvider = 'google';
             await user.save();
         }
         // Generate JWT token

@@ -59,7 +59,7 @@ router.post('/update-picture', upload.single('profilePicture'), auth_1.authentic
 });
 router.get('/picture', auth_1.authenticateToken, async (req, res) => {
     try {
-        const userId = req.user.userId;
+        const userId = req.userId;
         const user = await User_1.default.findById(userId).select('profilePicture username');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
