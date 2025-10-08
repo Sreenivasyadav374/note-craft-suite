@@ -14,6 +14,8 @@ import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { useToast } from "@/hooks/use-toast";
 import ProfilePictureUpload from "./ProfilePictureUpload";
 import UsageStats from "./UsageStats";
+import AccountSettings from "./AccountSettings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ProfileDrawerProps {
   open: boolean;
@@ -139,36 +141,47 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
 
         {isAuthenticated && (
           <>
-            <div className="py-5">
-              <UsageStats />
-            </div>
+            <Tabs defaultValue="overview" className="py-5">
+              <TabsList className="grid w-full grid-cols-2 mb-5">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="overview" className="space-y-5 mt-0">
+                <UsageStats />
 
-            {/* <div className="py-5 space-y-3">
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Your Premium Benefits
-              </h4>
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Your Premium Benefits
+                  </h4>
 
-              {premiumFeatures.map((feature, index) => (
-                <div
-                  key={index}
-                  className="bg-gradient-card backdrop-blur-sm rounded-xl p-4 border border-border/50 hover:shadow-card transition-smooth group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-smooth">
-                      <feature.icon className="h-4 w-4 text-primary" />
+                  {premiumFeatures.map((feature, index) => (
+                    <div
+                      key={index}
+                      className="bg-gradient-card backdrop-blur-sm rounded-xl p-4 border border-border/50 hover:shadow-card transition-smooth group"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-smooth">
+                          <feature.icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-semibold text-foreground mb-0.5 text-sm">
+                            {feature.title}
+                          </h5>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            {feature.description}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h5 className="font-semibold text-foreground mb-0.5 text-sm">
-                        {feature.title}
-                      </h5>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div> */}
+              </TabsContent>
+
+              <TabsContent value="settings" className="mt-0">
+                <AccountSettings />
+              </TabsContent>
+            </Tabs>
 
             <div className="space-y-2.5 pt-5 border-t border-border/50">
               <Button
