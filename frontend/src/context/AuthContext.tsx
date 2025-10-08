@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { register as apiRegister, login as apiLogin, googleLogin as apiGoogleLogin, getProfilePicture } from '../lib/api';
+import { register as apiRegister, login as apiLogin, googleLogin as apiGoogleLogin, getProfilePicture, changePassword as apiChangePassword } from '../lib/api';
 import { decodeJWT } from '../lib/jwt';
 
 export interface AuthContextType {
@@ -15,6 +15,7 @@ export interface AuthContextType {
   googleLogin: (credential: string) => Promise<any>;
   logout: () => void;
   updateProfilePicture: (pictureUrl: string) => void;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -118,6 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserProfile(profile);
       localStorage.setItem('userProfile', JSON.stringify(profile));
 
+      // Store member since date if not already stored
+      if (!localStorage.getItem('memberSince')) {
+        localStorage.setItem('memberSince', new Date().toISOString());
+      }
+
       // Fetch profile picture after login
       try {
         const profileData = await getProfilePicture(res.token);
@@ -153,6 +159,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserProfile(profile);
         localStorage.setItem('userProfile', JSON.stringify(profile));
       }
+
+      // Store member since date if not already stored
+      if (!localStorage.getItem('memberSince')) {
+        localStorage.setItem('memberSince', new Date().toISOString());
+      }
     } else if (res.error) {
       setError(res.error);
     }
@@ -179,8 +190,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!token) return { success: false, error: 'Not authenticated' };
+    return await apiChangePassword(token, currentPassword, newPassword);
+  };
+
   return (
-    <AuthContext.Provider value={{ token, refreshToken: refreshTokenValue, isAuthenticated: !!token, loading, error, initializing, userProfile, register, login, googleLogin, logout, updateProfilePicture }}>
+    <AuthContext.Provider value={{ token, refreshToken: refreshTokenValue, isAuthenticated: !!token, loading, error, initializing, userProfile, register, login, googleLogin, logout, updateProfilePicture, changePassword }}>
       {!initializing && children}
     </AuthContext.Provider>
   );

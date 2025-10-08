@@ -230,3 +230,25 @@ export async function getProfilePicture(token: string) {
     throw new Error(error.message || 'Unable to connect to server. Please try again later.');
   }
 }
+
+export async function changePassword(token: string, currentPassword: string, newPassword: string) {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      return { success: false, error: error.message || 'Failed to change password' };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Unable to connect to server. Please try again later.' };
+  }
+}

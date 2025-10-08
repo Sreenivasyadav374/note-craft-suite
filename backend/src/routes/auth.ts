@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import RefreshToken from '../models/RefreshToken';
 import crypto from 'crypto';
+import { authenticateToken, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
@@ -65,6 +66,45 @@ router.post('/logout', async (req: Request, res: Response) => {
     await RefreshToken.deleteOne({ token: refreshToken });
   }
   res.json({ message: 'Logged out' });
+});
+
+// Change password endpoint
+router.post('/change-password', authenticateToken, async (req: AuthRequest, res: Response) => {
+  const { currentPassword, newPassword } = req.body;
+  
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Current password and new password are required' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters' });
+  }
+
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify current password
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    // Hash and update new password
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    await user.save();
+
+    // Invalidate all refresh tokens for security
+    await RefreshToken.deleteMany({ user: user._id });
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({ message: 'Failed to change password' });
+  }
 });
 
 export default router;
