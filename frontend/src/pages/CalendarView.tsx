@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { ArrowLeft, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import QuickThemeToggle from "@/components/QuickThemeToggle";
 import { format, isSameDay, parseISO, isFuture, isPast, isToday } from "date-fns";
 
 interface Note {
@@ -112,6 +113,7 @@ export default function CalendarView() {
               </p>
             </div>
           </div>
+          <QuickThemeToggle />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

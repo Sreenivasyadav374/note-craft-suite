@@ -45,6 +45,7 @@ import { aiService } from "../utils/aiService";
 import ProfileDrawer from "@/components/ProfileDrawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
+import QuickThemeToggle from "@/components/QuickThemeToggle";
 
 interface Note {
   id: string;
@@ -611,6 +612,9 @@ const NotesApp = () => {
                 <Calendar className="h-5 w-5 mr-2" />
                 Calendar
               </Button>
+              <div className="[&_button]:text-white [&_button]:hover:bg-white/10">
+                <QuickThemeToggle />
+              </div>
               <Button
                 onClick={() => setIsDrawerOpen(true)}
                 variant="ghost"

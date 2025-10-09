@@ -1,4 +1,4 @@
-import { Bell, ArrowUpDown, Type, Save, CheckCheck } from "lucide-react";
+import { Bell, ArrowUpDown, Type, Save, CheckCheck, Palette } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { usePreferences } from "@/context/PreferencesContext";
 import { useToast } from "@/hooks/use-toast";
 import { notificationService } from "@/services/notificationService";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function AppPreferences() {
   const { preferences, updatePreference, resetPreferences } = usePreferences();
@@ -40,12 +42,23 @@ export default function AppPreferences() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-foreground mb-4">App Preferences</h3>
-        <p className="text-sm text-muted-foreground mb-6">
-          Customize your note-taking experience
-        </p>
-      </div>
+      <Tabs defaultValue="appearance" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <Palette className="h-4 w-4" />
+            Appearance
+          </TabsTrigger>
+          <TabsTrigger value="preferences" className="flex items-center gap-2">
+            <Type className="h-4 w-4" />
+            Preferences
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="appearance" className="mt-6">
+          <ThemeToggle />
+        </TabsContent>
+
+        <TabsContent value="preferences" className="space-y-6 mt-6">
 
       {/* Notifications */}
       <div className="space-y-4 bg-gradient-card rounded-xl p-4 border border-border/50">
@@ -152,14 +165,16 @@ export default function AppPreferences() {
         </div>
       </div>
 
-      {/* Reset Button */}
-      <Button
-        onClick={handleReset}
-        variant="outline"
-        className="w-full"
-      >
-        Reset to Defaults
-      </Button>
+          {/* Reset Button */}
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            className="w-full"
+          >
+            Reset to Defaults
+          </Button>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

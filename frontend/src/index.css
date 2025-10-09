@@ -149,6 +149,78 @@
   }
 }
 
+[data-font-size="large"] {
+  font-size: 110%;
+}
+
+[data-font-size="extra-large"] {
+  font-size: 125%;
+}
+
+[data-reduced-motion="true"] * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+[data-high-contrast="true"] {
+  --border: 0 0% 40%;
+  --muted: 0 0% 85%;
+}
+
+[data-high-contrast="true"].dark {
+  --border: 0 0% 60%;
+  --muted: 0 0% 25%;
+}
+
+[data-theme-color="blue"] {
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 98%;
+  --primary-glow: 217 91% 60%;
+  --primary-accent: 217 91% 50%;
+  --ring: 217 91% 60%;
+}
+
+[data-theme-color="blue"].dark {
+  --primary: 217 91% 65%;
+  --primary-foreground: 0 0% 8%;
+  --primary-glow: 217 91% 60%;
+  --primary-accent: 217 91% 55%;
+  --ring: 217 91% 65%;
+}
+
+[data-theme-color="green"] {
+  --primary: 142 76% 45%;
+  --primary-foreground: 0 0% 98%;
+  --primary-glow: 142 76% 60%;
+  --primary-accent: 142 76% 40%;
+  --ring: 142 76% 45%;
+}
+
+[data-theme-color="green"].dark {
+  --primary: 142 76% 55%;
+  --primary-foreground: 0 0% 8%;
+  --primary-glow: 142 76% 60%;
+  --primary-accent: 142 76% 50%;
+  --ring: 142 76% 55%;
+}
+
+[data-theme-color="rose"] {
+  --primary: 346 77% 58%;
+  --primary-foreground: 0 0% 98%;
+  --primary-glow: 346 77% 65%;
+  --primary-accent: 346 77% 50%;
+  --ring: 346 77% 58%;
+}
+
+[data-theme-color="rose"].dark {
+  --primary: 346 77% 65%;
+  --primary-foreground: 0 0% 8%;
+  --primary-glow: 346 77% 70%;
+  --primary-accent: 346 77% 60%;
+  --ring: 346 77% 65%;
+}
+
 /* Custom Prose Styles for Rich Text Display */
 .prose {
   color: hsl(var(--foreground));
