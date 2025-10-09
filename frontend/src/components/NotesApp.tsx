@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import { useNotes } from "../context/NotesContext";
+import { usePreferences } from "../context/PreferencesContext";
 import {
   createNote,
   updateNote,
@@ -61,6 +62,7 @@ interface Note {
 const NotesApp = () => {
   const navigate = useNavigate();
   const { notes, setNotes, isLoading: notesLoading } = useNotes();
+  const { preferences } = usePreferences();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -80,6 +82,8 @@ const NotesApp = () => {
 
   useEffect(() => {
     const initNotifications = async () => {
+      if (!preferences.notificationsEnabled) return;
+      
       const hasPermission = await notificationService.requestPermission();
       if (hasPermission) {
         toast({
@@ -92,10 +96,10 @@ const NotesApp = () => {
     if (isAuthenticated) {
       initNotifications();
     }
-  }, [isAuthenticated, toast]);
+  }, [isAuthenticated, preferences.notificationsEnabled, toast]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !preferences.notificationsEnabled) return;
 
     notificationService.startReminderCheck(token, async () => {
       await reminderService.checkPendingReminders(token);
@@ -104,7 +108,7 @@ const NotesApp = () => {
     return () => {
       notificationService.stopReminderCheck();
     };
-  }, [token]);
+  }, [token, preferences.notificationsEnabled]);
 
   const createNewFolder = async () => {
     if (!token || isCreating) return;
@@ -548,9 +552,20 @@ const NotesApp = () => {
     }
 
     return items.sort((a, b) => {
+      // Always show folders first
       if (a.type === "folder" && b.type === "file") return -1;
       if (a.type === "file" && b.type === "folder") return 1;
-      return b.updatedAt.getTime() - a.updatedAt.getTime();
+      
+      // Then apply user's preferred sort order
+      switch (preferences.defaultSortOrder) {
+        case 'alphabetical':
+          return a.title.localeCompare(b.title);
+        case 'oldest':
+          return a.createdAt.getTime() - b.createdAt.getTime();
+        case 'recent':
+        default:
+          return b.updatedAt.getTime() - a.updatedAt.getTime();
+      }
     });
   };
 

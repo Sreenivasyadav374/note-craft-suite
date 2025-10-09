@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { getNotes } from '../lib/api';
 import { useAuthContext } from './AuthContext';
+import { usePreferences, SortOrder } from './PreferencesContext';
 
 interface Note {
   id: string;
@@ -17,6 +18,7 @@ interface Note {
 
 interface NotesContextType {
   notes: Note[];
+  sortedNotes: Note[];
   setNotes: (notes: Note[]) => void;
   isLoading: boolean;
   refreshNotes: () => Promise<void>;
@@ -28,6 +30,25 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { token } = useAuthContext();
+  const { preferences } = usePreferences();
+
+  const sortNotes = (notesToSort: Note[], sortOrder: SortOrder): Note[] => {
+    const sorted = [...notesToSort];
+    switch (sortOrder) {
+      case 'recent':
+        return sorted.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      case 'alphabetical':
+        return sorted.sort((a, b) => a.title.localeCompare(b.title));
+      case 'oldest':
+        return sorted.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      default:
+        return sorted;
+    }
+  };
+
+  const sortedNotes = useMemo(() => {
+    return sortNotes(notes, preferences.defaultSortOrder);
+  }, [notes, preferences.defaultSortOrder]);
 
   const refreshNotes = async () => {
     if (!token) {
@@ -63,7 +84,7 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   }, [token]);
 
   return (
-    <NotesContext.Provider value={{ notes, setNotes, isLoading, refreshNotes }}>
+    <NotesContext.Provider value={{ notes, sortedNotes, setNotes, isLoading, refreshNotes }}>
       {children}
     </NotesContext.Provider>
   );

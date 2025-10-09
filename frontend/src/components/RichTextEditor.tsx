@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { usePreferences } from '@/context/PreferencesContext';
+import { cn } from '@/lib/utils';
 
 interface RichTextEditorProps {
   content: string;
@@ -26,6 +28,18 @@ interface RichTextEditorProps {
 
 export const RichTextEditor = ({ content, onChange, placeholder }: RichTextEditorProps) => {
   const { toast } = useToast();
+  const { preferences } = usePreferences();
+
+  const getFontSizeClass = () => {
+    switch (preferences.editorFontSize) {
+      case 'small':
+        return 'prose-sm';
+      case 'large':
+        return 'prose-lg';
+      default:
+        return 'prose-base';
+    }
+  };
 
   const editor = useEditor({
     extensions: [
@@ -49,7 +63,8 @@ export const RichTextEditor = ({ content, onChange, placeholder }: RichTextEdito
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[300px] p-4',
+        class: cn('prose max-w-none focus:outline-none min-h-[300px] p-4', getFontSizeClass()),
+        spellcheck: String(preferences.editorSpellCheck),
       },
     },
   });

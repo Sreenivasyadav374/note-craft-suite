@@ -3,9 +3,11 @@ import { Mail, User, Key, Shield, Calendar, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { useAuthContext } from "../context/AuthContext";
 import { decodeJWT } from "../lib/jwt";
 import { useToast } from "@/hooks/use-toast";
+import AppPreferences from "./AppPreferences";
 
 export default function AccountSettings() {
   const { token, userProfile, changePassword } = useAuthContext();
@@ -69,10 +71,12 @@ export default function AccountSettings() {
   };
 
   return (
-    <div className="space-y-4">
-      <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-        Account Settings
-      </h4>
+    <div className="space-y-8">
+      {/* Account Settings Section */}
+      <div className="space-y-4">
+        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+          Account Settings
+        </h4>
 
       {/* Account Details */}
       <div className="bg-gradient-card rounded-xl p-5 border border-border/50 space-y-4">
@@ -212,6 +216,12 @@ export default function AccountSettings() {
           )}
         </div>
       )}
+      </div>
+
+      <Separator />
+
+      {/* App Preferences Section */}
+      <AppPreferences />
     </div>
   );
 }
