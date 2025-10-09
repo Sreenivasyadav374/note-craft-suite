@@ -250,6 +250,11 @@ const NotesApp = () => {
     }
   };
 
+  const selectNote = (note: Note) => {
+    setSelectedNote(note);
+    setIsEditing(false);
+  };
+
   const startEditing = (note: Note) => {
     setSelectedNote(note);
     setIsEditing(true);
@@ -716,7 +721,7 @@ const NotesApp = () => {
                       onClick={() =>
                         item.type === "folder"
                           ? openFolder(item.id)
-                          : startEditing(item)
+                          : selectNote(item)
                       }
                     >
                       <CardHeader className="py-2">
