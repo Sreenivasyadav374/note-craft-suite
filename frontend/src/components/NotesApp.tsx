@@ -35,6 +35,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,6 +87,7 @@ const NotesApp = () => {
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
   const { toast } = useToast();
 
   const { token, isAuthenticated, userProfile } = useAuthContext();
@@ -228,12 +239,12 @@ const NotesApp = () => {
     }
   };
 
-  const deleteNote = async (noteId: string) => {
-    if (!token) return;
+  const confirmDelete = async () => {
+    if (!token || !noteToDelete) return;
     try {
-      await deleteNoteApi(token, noteId);
-      setNotes(notes.filter((note) => note.id !== noteId));
-      if (selectedNote?.id === noteId) {
+      await deleteNoteApi(token, noteToDelete.id);
+      setNotes(notes.filter((note) => note.id !== noteToDelete.id));
+      if (selectedNote?.id === noteToDelete.id) {
         setSelectedNote(null);
         setIsEditing(false);
       }
@@ -248,6 +259,8 @@ const NotesApp = () => {
         description: error.message || "Failed to delete item.",
         variant: "destructive",
       });
+    } finally {
+      setNoteToDelete(null);
     }
   };
 
@@ -634,6 +647,26 @@ const NotesApp = () => {
 
       <ProfileDrawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} />
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!noteToDelete} onOpenChange={(open) => !open && setNoteToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{noteToDelete?.title}"? 
+              {noteToDelete?.type === "folder" && " All items inside this folder will also be deleted."}
+              {" "}This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="container mx-auto px-6 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Sidebar - Notes List */}
@@ -743,7 +776,7 @@ const NotesApp = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              deleteNote(item.id);
+                              setNoteToDelete(item);
                             }}
                             className="text-muted-foreground hover:text-destructive transition-smooth"
                           >
