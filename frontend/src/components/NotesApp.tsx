@@ -602,28 +602,26 @@ const NotesApp = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-hero border-b shadow-elegant">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <FileText className="h-8 w-8 text-white" />
+        <div className="container mx-auto px-4 py-2 min-h-0">
+          <div className="flex items-center justify-between min-h-0">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                <FileText className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">NotesApp</h1>
-                <p className="text-white/80">
-                  Capture your thoughts beautifully
-                </p>
+                <h1 className="text-xl font-bold text-white leading-tight">NotesApp</h1>
+                <p className="text-white/80 text-xs leading-tight">Capture your thoughts beautifully</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
               <Button
                 onClick={() => navigate("/calendar")}
                 variant="ghost"
                 size="sm"
-                className="text-white hover:bg-white/10"
+                className="text-white hover:bg-white/10 px-2 py-1"
               >
-                <Calendar className="h-5 w-5 mr-2" />
-                Calendar
+                <Calendar className="h-4 w-4 mr-1" />
+                <span className="text-sm">Calendar</span>
               </Button>
               <div className="[&_button]:text-white [&_button]:hover:bg-white/10">
                 <QuickThemeToggle />
@@ -633,10 +631,10 @@ const NotesApp = () => {
                 variant="ghost"
                 className="p-0 h-auto"
               >
-                <Avatar className="h-10 w-10">
+                <Avatar className="h-8 w-8">
                   <AvatarImage src={userProfile?.picture} />
                   <AvatarFallback>
-                    <UserCircle className="h-6 w-6" />
+                    <UserCircle className="h-5 w-5" />
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -670,7 +668,7 @@ const NotesApp = () => {
       <div className="container mx-auto px-6 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Sidebar - Notes List */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 flex flex-col h-full">
             {/* Folder Navigation */}
             {activeFolderId !== null && (
               <div className="mb-4 flex items-center">
@@ -734,109 +732,111 @@ const NotesApp = () => {
                 <Spinner />
               </div>
             ) : (
-              <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto">
-                {visibleItems.length === 0 ? (
-                  <Card className="shadow-card border-0 bg-gradient-card">
-                    <CardContent className="p-6 text-center">
-                      <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">
-                        {notes.length === 0
-                          ? "No items yet. Create your first note or folder!"
-                          : "No items found in this location."}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  visibleItems.map((item) => (
-                    <Card
-                      key={item.id}
-                      className={`cursor-pointer transition-spring shadow-card border-0 bg-gradient-card hover:shadow-glow ${
-                        selectedNote?.id === item.id && item.type === "file"
-                          ? "ring-2 ring-primary shadow-glow"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        item.type === "folder"
-                          ? openFolder(item.id)
-                          : selectNote(item)
-                      }
-                    >
-                      <CardHeader className="py-2">
-                        <div className="flex items-start justify-between">
-                          <CardTitle className="text-lg truncate mr-2 flex items-center">
-                            {item.type === "folder" ? (
-                              <Folder className="h-5 w-5 mr-2 text-yellow-500/80" />
-                            ) : (
-                              <FileText className="h-5 w-5 mr-2 text-primary/80" />
-                            )}
-                            {item.title}
-                          </CardTitle>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setNoteToDelete(item);
-                            }}
-                            className="text-muted-foreground hover:text-destructive transition-smooth"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      {item.type === "file" && (
-                        <CardContent className="py-2">
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-1">
-                            {item.content
-                              ? (() => {
-                                  let preview = item.content
-                                    .replace(
-                                      /<li data-type="taskItem"[^>]*data-checked="true"[^>]*>/g,
-                                      "☑ "
-                                    )
-                                    .replace(
-                                      /<li data-type="taskItem"[^>]*>/g,
-                                      "☐ "
-                                    )
-                                    .replace(/<h[1-6][^>]*>/g, "\n")
-                                    .replace(/<\/h[1-6]>/g, " ")
-                                    .replace(/<\/p>/g, " ")
-                                    .replace(/<br\s*\/?>/g, " ")
-                                    .replace(/<[^>]*>/g, "")
-                                    .replace(/\s+/g, " ")
-                                    .trim();
-                                  return (
-                                    preview.substring(0, 150) || "No content"
-                                  );
-                                })()
-                              : "No content"}
-                          </p>
-                          {item.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-1">
-                              {item.tags.slice(0, 3).map((tag, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {tag}
-                                </Badge>
-                              ))}
-                              {item.tags.length > 3 && (
-                                <Badge variant="secondary" className="text-xs">
-                                  +{item.tags.length - 3}
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {item.updatedAt.toLocaleDateString()}
-                          </p>
-                        </CardContent>
-                      )}
+              <div className="flex-1 flex flex-col premium-sidebar rounded-2xl border-2 border-primary/30 bg-gradient-card shadow-3d overflow-hidden min-h-[400px] max-h-[calc(100vh-220px)]">
+                <div className="flex-1 overflow-y-auto px-1 py-2 space-y-4 custom-scrollbar">
+                  {visibleItems.length === 0 ? (
+                    <Card className="shadow-card border-0 bg-gradient-card">
+                      <CardContent className="p-6 text-center">
+                        <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <p className="text-muted-foreground">
+                          {notes.length === 0
+                            ? "No items yet. Create your first note or folder!"
+                            : "No items found in this location."}
+                        </p>
+                      </CardContent>
                     </Card>
-                  ))
-                )}
+                  ) : (
+                    visibleItems.map((item) => (
+                      <Card
+                        key={item.id}
+                        className={`cursor-pointer transition-spring shadow-card border border-primary/20 bg-gradient-card hover:shadow-glow hover:border-primary/60 rounded-xl ${
+                          selectedNote?.id === item.id && item.type === "file"
+                            ? "ring-2 ring-primary shadow-glow"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          item.type === "folder"
+                            ? openFolder(item.id)
+                            : selectNote(item)
+                        }
+                      >
+                        <CardHeader className="py-2">
+                          <div className="flex items-start justify-between">
+                            <CardTitle className="text-lg truncate mr-2 flex items-center">
+                              {item.type === "folder" ? (
+                                <Folder className="h-5 w-5 mr-2 text-yellow-500/80" />
+                              ) : (
+                                <FileText className="h-5 w-5 mr-2 text-primary/80" />
+                              )}
+                              {item.title}
+                            </CardTitle>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setNoteToDelete(item);
+                              }}
+                              className="text-muted-foreground hover:text-destructive transition-smooth"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        {item.type === "file" && (
+                          <CardContent className="py-2">
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-1">
+                              {item.content
+                                ? (() => {
+                                    let preview = item.content
+                                      .replace(
+                                        /<li data-type="taskItem"[^>]*data-checked="true"[^>]*>/g,
+                                        "☑ "
+                                      )
+                                      .replace(
+                                        /<li data-type="taskItem"[^>]*>/g,
+                                        "☐ "
+                                      )
+                                      .replace(/<h[1-6][^>]*>/g, "\n")
+                                      .replace(/<\/h[1-6]>/g, " ")
+                                      .replace(/<\/p>/g, " ")
+                                      .replace(/<br\s*\/?/g, " ")
+                                      .replace(/<[^>]*>/g, "")
+                                      .replace(/\s+/g, " ")
+                                      .trim();
+                                    return (
+                                      preview.substring(0, 150) || "No content"
+                                    );
+                                  })()
+                                : "No content"}
+                            </p>
+                            {item.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-1">
+                                {item.tags.slice(0, 3).map((tag, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {item.tags.length > 3 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{item.tags.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {item.updatedAt.toLocaleDateString()}
+                            </p>
+                          </CardContent>
+                        )}
+                      </Card>
+                    ))
+                  )}
+                </div>
               </div>
             )}
           </div>
