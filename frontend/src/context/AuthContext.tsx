@@ -142,35 +142,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return res;
   };
 
-  const googleLogin = async (credential: string) => {
-    setLoading(true);
-    setError(null);
-    const res = await apiGoogleLogin(credential);
-    setLoading(false);
-    if (res.token) {
-      setToken(res.token);
-      if (res.refreshToken) setRefreshTokenValue(res.refreshToken);
-      // Set user profile from Google data
-      if (res.user) {
-        const profile = {
-          name: res.user.name,
-          email: res.user.email,
-          picture: res.user.picture
-        };
-        setUserProfile(profile);
-        localStorage.setItem('userProfile', JSON.stringify(profile));
-        localStorage.setItem('authMethod', 'google');
-      }
+const googleLogin = async (credential: string) => {
+  setLoading(true);
+  setError(null);
+  const res = await apiGoogleLogin(credential);
+  setLoading(false);
 
-      // Store member since date if not already stored
-      if (!localStorage.getItem('memberSince')) {
-        localStorage.setItem('memberSince', new Date().toISOString());
-      }
-    } else if (res.error) {
-      setError(res.error);
+  if (res.token) {
+    setToken(res.token);
+    if (res.refreshToken) setRefreshTokenValue(res.refreshToken);
+
+    // Step 1: Set immediate Google profile
+    if (res.user) {
+      const profile = {
+        name: res.user.name,
+        email: res.user.email,
+        picture: res.user.picture, // temporary Google picture
+      };
+      setUserProfile(profile);
+      localStorage.setItem("userProfile", JSON.stringify(profile));
+      localStorage.setItem("authMethod", "google");
     }
-    return res;
-  };
+
+    // Step 2: Store member since date if not already stored
+    if (!localStorage.getItem("memberSince")) {
+      localStorage.setItem("memberSince", new Date().toISOString());
+    }
+
+    // Step 3: Fetch backend profile picture (overwrite Google one if available)
+    try {
+      const profileData = await getProfilePicture(res.token);
+      if (profileData.profilePicture) {
+        const updatedProfile = {
+          name: res.user?.name || "",
+          email: res.user?.email || "",
+          picture: profileData.profilePicture,
+        };
+        setUserProfile(updatedProfile);
+        localStorage.setItem("userProfile", JSON.stringify(updatedProfile));
+      }
+    } catch (error) {
+      console.error("Failed to fetch backend profile picture:", error);
+    }
+  } else if (res.error) {
+    setError(res.error);
+  }
+
+  return res;
+};
 
   const logout = () => {
     if (refreshTokenValue) {

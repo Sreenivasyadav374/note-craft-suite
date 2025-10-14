@@ -1,6 +1,6 @@
 import { notificationService } from './notificationService';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4002';
 
 export interface ReminderNote {
   _id: string;
