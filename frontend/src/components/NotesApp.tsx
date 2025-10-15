@@ -844,8 +844,8 @@ const NotesApp = () => {
           {/* Main Content - Note Editor */}
           <div className="lg:col-span-2">
             {selectedNote ? (
-              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-200px)]">
-                <CardHeader className="border-b bg-white/50 backdrop-blur-sm">
+              <Card className="shadow-elegant border-2 border-primary/30 bg-gradient-card h-full rounded-2xl flex flex-col overflow-hidden">
+                <CardHeader className="border-b bg-white/50 backdrop-blur-sm rounded-t-2xl">
                   <div className="flex items-center justify-between">
                     {isEditing ? (
                       <Input
@@ -1014,7 +1014,7 @@ const NotesApp = () => {
                   )}
                 </CardHeader>
 
-                <CardContent className="p-6 h-full">
+                <CardContent className="p-6 flex-1 min-h-0 overflow-auto">
                   {isEditing ? (
                     <div className="relative h-full">
                       {selectedNote.type === "file" && (
