@@ -56,6 +56,7 @@ import ProfileDrawer from "@/components/ProfileDrawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import QuickThemeToggle from "@/components/QuickThemeToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Note {
   id: string;
@@ -91,6 +92,8 @@ const NotesApp = () => {
   const { toast } = useToast();
 
   const { token, isAuthenticated, userProfile } = useAuthContext();
+  const isMobile = useIsMobile();
+  const [mobileView, setMobileView] = useState<'list' | 'note'>('list');
 
   useEffect(() => {
     const initNotifications = async () => {
@@ -590,6 +593,17 @@ const NotesApp = () => {
 
   const visibleItems = getVisibleItems();
 
+  // When a note is selected or editing/creating, switch to note view on mobile
+  useEffect(() => {
+    if (isMobile) {
+      if (selectedNote || isEditing) {
+        setMobileView('note');
+      } else {
+        setMobileView('list');
+      }
+    }
+  }, [isMobile, selectedNote, isEditing]);
+
   if (!isAuthenticated) {
     return (
       <div className="p-8 text-center text-lg">
@@ -665,10 +679,15 @@ const NotesApp = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="container mx-auto px-6 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* Sidebar - Notes List */}
-          <div className="lg:col-span-1 flex flex-col h-full">
+          <div
+            className={
+              `lg:col-span-1 flex flex-col h-full ` +
+              (isMobile ? (mobileView === 'list' ? 'block' : 'hidden') : 'block')
+            }
+          >
             {/* Folder Navigation */}
             {activeFolderId !== null && (
               <div className="mb-4 flex items-center">
@@ -842,28 +861,35 @@ const NotesApp = () => {
           </div>
 
           {/* Main Content - Note Editor */}
-          <div className="lg:col-span-2">
+          <div
+            className={
+              `lg:col-span-2 ` +
+              (isMobile ? (mobileView === 'note' ? 'block' : 'hidden') : 'block')
+            }
+          >
             {selectedNote ? (
               <Card className="shadow-elegant border-2 border-primary/30 bg-gradient-card h-full rounded-2xl flex flex-col overflow-hidden">
                 <CardHeader className="border-b bg-white/50 backdrop-blur-sm rounded-t-2xl">
-                  <div className="flex items-center justify-between">
-                    {isEditing ? (
-                      <Input
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        className="text-xl font-bold border-0 bg-transparent p-0 focus:ring-0"
-                        placeholder={
-                          selectedNote.type === "folder"
-                            ? "Folder Name..."
-                            : "Note title..."
-                        }
-                      />
-                    ) : (
-                      <CardTitle className="text-2xl">
-                        {selectedNote.title}
-                      </CardTitle>
-                    )}
-                    <div className="flex items-center space-x-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex-1">
+                      {isEditing ? (
+                        <Input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="text-xl font-bold border-0 bg-transparent p-0 focus:ring-0"
+                          placeholder={
+                            selectedNote.type === "folder"
+                              ? "Folder Name..."
+                              : "Note title..."
+                          }
+                        />
+                      ) : (
+                        <CardTitle className="text-2xl">
+                          {selectedNote.title}
+                        </CardTitle>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                       {isEditing && selectedNote.type === "file" && (
                         <Button
                           onClick={handleAISuggestion}
@@ -1024,12 +1050,17 @@ const NotesApp = () => {
                           className={`
                             absolute top-2.5 right-4 z-10 transition-all duration-300 rounded-full h-8 w-8 p-0
                             text-primary bg-white/70 backdrop-blur-sm shadow-md border border-primary/20
+                            sm:top-2.5 sm:right-4
                             ${
                               isFixingContent
                                 ? "opacity-100"
                                 : "opacity-70 hover:opacity-100"
                             }
+                            ${typeof window !== 'undefined' && window.innerWidth < 640 ? 'mt-10' : ''}
                           `}
+                          style={{
+                            marginTop: typeof window !== 'undefined' && window.innerWidth < 640 ? 40 : 0
+                          }}
                           title="Enhance Content (AI)"
                           disabled={
                             isFixingContent ||
@@ -1069,29 +1100,31 @@ const NotesApp = () => {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)]">
-                <CardContent className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                      <FileText className="h-12 w-12 text-white" />
+              isMobile ? null : (
+                <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)]">
+                  <CardContent className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                        <FileText className="h-12 w-12 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold mb-2">
+                        Select an item to view
+                      </h3>
+                      <p className="text-muted-foreground mb-6">
+                        Choose an item from the sidebar or create a new one to get
+                        started.
+                      </p>
+                      <Button
+                        onClick={createNewNote}
+                        className="bg-gradient-primary hover:opacity-90"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create New Note
+                      </Button>
                     </div>
-                    <h3 className="text-2xl font-bold mb-2">
-                      Select an item to view
-                    </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Choose an item from the sidebar or create a new one to get
-                      started.
-                    </p>
-                    <Button
-                      onClick={createNewNote}
-                      className="bg-gradient-primary hover:opacity-90"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create New Note
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )
             )}
           </div>
         </div>
