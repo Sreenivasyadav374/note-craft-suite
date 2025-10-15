@@ -37,45 +37,47 @@ const AuthPage: React.FC = () => {
     return <Navigate to="/notes" replace />;
   }
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Card className="w-full max-w-md shadow-elegant">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">
-            {isLogin ? 'Login to NoteCraft' : 'Register for NoteCraft'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              autoFocus
-            />
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-            <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
-              {loading ? 'Please wait...' : isLogin ? 'Login' : 'Register'}
-            </Button>
-          </form>
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              className="text-primary underline text-sm"
-              onClick={() => setIsLogin(!isLogin)}
-            >
-              {isLogin ? "Don't have an account? Register" : 'Already have an account? Login'}
-            </button>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center px-0 sm:px-0">
+      <div className="w-full max-w-xs sm:max-w-md px-4 sm:px-0">
+        <Card className="w-full shadow-elegant">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">
+              {isLogin ? 'Login to NoteCraft' : 'Register for NoteCraft'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                autoFocus
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
+                {loading ? 'Please wait...' : isLogin ? 'Login' : 'Register'}
+              </Button>
+            </form>
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                className="text-primary underline text-sm"
+                onClick={() => setIsLogin(!isLogin)}
+              >
+                {isLogin ? "Don't have an account? Register" : 'Already have an account? Login'}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

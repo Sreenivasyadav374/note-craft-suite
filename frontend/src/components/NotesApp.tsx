@@ -867,6 +867,23 @@ const NotesApp = () => {
               (isMobile ? (mobileView === 'note' ? 'block' : 'hidden') : 'block')
             }
           >
+            {/* Mobile Back Button OUTSIDE the note card */}
+            {isMobile && selectedNote && (
+              <div className="mb-2 flex items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mr-2 px-2"
+                  onClick={() => {
+                    setSelectedNote(null);
+                    setIsEditing(false);
+                    setMobileView('list');
+                  }}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Back to List
+                </Button>
+              </div>
+            )}
             {selectedNote ? (
               <Card className="shadow-elegant border-2 border-primary/30 bg-gradient-card h-full rounded-2xl flex flex-col overflow-hidden">
                 <CardHeader className="border-b bg-white/50 backdrop-blur-sm rounded-t-2xl">
