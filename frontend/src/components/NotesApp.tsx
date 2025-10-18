@@ -57,6 +57,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
 import QuickThemeToggle from "@/components/QuickThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { v4 as uuidv4 } from "uuid";
 
 interface Note {
   id: string;
@@ -69,11 +70,20 @@ interface Note {
   notificationSent?: boolean;
   type: "file" | "folder";
   parentId?: string | null;
+  synced?: boolean; // for offline notes
 }
 
 const NotesApp = () => {
   const navigate = useNavigate();
-  const { notes, setNotes, isLoading: notesLoading } = useNotes();
+  const {
+    notes,
+    setNotes,
+    isLoading: notesLoading,
+    addNoteOffline,
+    updateNoteOffline,
+    deleteNoteOffline,
+    syncOfflineNotes,
+  } = useNotes();
   const { preferences } = usePreferences();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -93,12 +103,12 @@ const NotesApp = () => {
 
   const { token, isAuthenticated, userProfile } = useAuthContext();
   const isMobile = useIsMobile();
-  const [mobileView, setMobileView] = useState<'list' | 'note'>('list');
+  const [mobileView, setMobileView] = useState<"list" | "note">("list");
 
   useEffect(() => {
     const initNotifications = async () => {
       if (!preferences.notificationsEnabled) return;
-      
+
       const hasPermission = await notificationService.requestPermission();
       if (hasPermission) {
         toast({
@@ -183,39 +193,62 @@ const NotesApp = () => {
   };
 
   const createNewNote = async () => {
-    if (!token || isCreating) return;
+    if (isCreating) return;
 
     setIsCreating(true);
     try {
-      const newNoteApi = await createNote(
-        token,
-        "Untitled Note",
-        "",
-        [],
-        "file",
-        activeFolderId
-      );
+      let parsedNote: Note;
 
-      const parsedNote: Note = {
-        id: newNoteApi._id,
-        title: newNoteApi.title,
-        content: newNoteApi.content,
-        tags: newNoteApi.tags || [],
-        createdAt: newNoteApi.createdAt
-          ? new Date(newNoteApi.createdAt)
-          : new Date(),
-        updatedAt: newNoteApi.updatedAt
-          ? new Date(newNoteApi.updatedAt)
-          : new Date(),
-        reminderDate: newNoteApi.reminderDate
-          ? new Date(newNoteApi.reminderDate)
-          : null,
-        notificationSent: newNoteApi.notificationSent || false,
-        type: "file",
-        parentId: activeFolderId,
-      };
+      if (navigator.onLine && token) {
+        // Online mode: create note via API
+        const newNoteApi = await createNote(
+          token,
+          "Untitled Note",
+          "",
+          [],
+          "file",
+          activeFolderId
+        );
 
-      setNotes([parsedNote, ...notes]);
+        parsedNote = {
+          id: newNoteApi._id,
+          title: newNoteApi.title,
+          content: newNoteApi.content,
+          tags: newNoteApi.tags || [],
+          createdAt: newNoteApi.createdAt
+            ? new Date(newNoteApi.createdAt)
+            : new Date(),
+          updatedAt: newNoteApi.updatedAt
+            ? new Date(newNoteApi.updatedAt)
+            : new Date(),
+          reminderDate: newNoteApi.reminderDate
+            ? new Date(newNoteApi.reminderDate)
+            : null,
+          notificationSent: newNoteApi.notificationSent || false,
+          type: "file",
+          parentId: activeFolderId,
+        };
+      } else {
+        // Offline mode: create locally
+        parsedNote = {
+          id: uuidv4(),
+          title: "Untitled Note",
+          content: "",
+          tags: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          reminderDate: null,
+          notificationSent: false,
+          type: "file",
+          parentId: activeFolderId,
+          synced: false, // mark as offline
+        };
+      }
+
+      // Add note to state & IndexedDB using your NotesContext helper
+      await addNoteOffline(parsedNote);
+
+      // Set selected note and editing state
       setSelectedNote(parsedNote);
       setIsEditing(true);
       setEditTitle(parsedNote.title);
@@ -226,6 +259,7 @@ const NotesApp = () => {
           ? new Date(parsedNote.reminderDate).toISOString().slice(0, 16)
           : ""
       );
+
       toast({
         title: "New note created",
         description: "Start writing your thoughts!",
@@ -577,14 +611,14 @@ const NotesApp = () => {
       // Always show folders first
       if (a.type === "folder" && b.type === "file") return -1;
       if (a.type === "file" && b.type === "folder") return 1;
-      
+
       // Then apply user's preferred sort order
       switch (preferences.defaultSortOrder) {
-        case 'alphabetical':
+        case "alphabetical":
           return a.title.localeCompare(b.title);
-        case 'oldest':
+        case "oldest":
           return a.createdAt.getTime() - b.createdAt.getTime();
-        case 'recent':
+        case "recent":
         default:
           return b.updatedAt.getTime() - a.updatedAt.getTime();
       }
@@ -597,9 +631,9 @@ const NotesApp = () => {
   useEffect(() => {
     if (isMobile) {
       if (selectedNote || isEditing) {
-        setMobileView('note');
+        setMobileView("note");
       } else {
-        setMobileView('list');
+        setMobileView("list");
       }
     }
   }, [isMobile, selectedNote, isEditing]);
@@ -612,6 +646,13 @@ const NotesApp = () => {
     );
   }
 
+  useEffect(() => {
+    window.addEventListener("online", syncOfflineNotes);
+    return () => {
+      window.removeEventListener("online", syncOfflineNotes);
+    };
+  }, [token]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -623,8 +664,12 @@ const NotesApp = () => {
                 <FileText className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white leading-tight">NotesApp</h1>
-                <p className="text-white/80 text-xs leading-tight">Capture your thoughts beautifully</p>
+                <h1 className="text-xl font-bold text-white leading-tight">
+                  NotesApp
+                </h1>
+                <p className="text-white/80 text-xs leading-tight">
+                  Capture your thoughts beautifully
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -660,19 +705,26 @@ const NotesApp = () => {
       <ProfileDrawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} />
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!noteToDelete} onOpenChange={(open) => !open && setNoteToDelete(null)}>
+      <AlertDialog
+        open={!!noteToDelete}
+        onOpenChange={(open) => !open && setNoteToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{noteToDelete?.title}"? 
-              {noteToDelete?.type === "folder" && " All items inside this folder will also be deleted."}
-              {" "}This action cannot be undone.
+              Are you sure you want to delete "{noteToDelete?.title}"?
+              {noteToDelete?.type === "folder" &&
+                " All items inside this folder will also be deleted."}{" "}
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -685,7 +737,11 @@ const NotesApp = () => {
           <div
             className={
               `lg:col-span-1 flex flex-col h-full ` +
-              (isMobile ? (mobileView === 'list' ? 'block' : 'hidden') : 'block')
+              (isMobile
+                ? mobileView === "list"
+                  ? "block"
+                  : "hidden"
+                : "block")
             }
           >
             {/* Folder Navigation */}
@@ -841,7 +897,10 @@ const NotesApp = () => {
                                   </Badge>
                                 ))}
                                 {item.tags.length > 3 && (
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
                                     +{item.tags.length - 3}
                                   </Badge>
                                 )}
@@ -864,7 +923,11 @@ const NotesApp = () => {
           <div
             className={
               `lg:col-span-2 ` +
-              (isMobile ? (mobileView === 'note' ? 'block' : 'hidden') : 'block')
+              (isMobile
+                ? mobileView === "note"
+                  ? "block"
+                  : "hidden"
+                : "block")
             }
           >
             {/* Mobile Back Button OUTSIDE the note card */}
@@ -877,7 +940,7 @@ const NotesApp = () => {
                   onClick={() => {
                     setSelectedNote(null);
                     setIsEditing(false);
-                    setMobileView('list');
+                    setMobileView("list");
                   }}
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" /> Back to List
@@ -1073,10 +1136,19 @@ const NotesApp = () => {
                                 ? "opacity-100"
                                 : "opacity-70 hover:opacity-100"
                             }
-                            ${typeof window !== 'undefined' && window.innerWidth < 640 ? 'mt-10' : ''}
+                            ${
+                              typeof window !== "undefined" &&
+                              window.innerWidth < 640
+                                ? "mt-10"
+                                : ""
+                            }
                           `}
                           style={{
-                            marginTop: typeof window !== 'undefined' && window.innerWidth < 640 ? 40 : 0
+                            marginTop:
+                              typeof window !== "undefined" &&
+                              window.innerWidth < 640
+                                ? 40
+                                : 0,
                           }}
                           title="Enhance Content (AI)"
                           disabled={
@@ -1116,32 +1188,30 @@ const NotesApp = () => {
                   )}
                 </CardContent>
               </Card>
-            ) : (
-              isMobile ? null : (
-                <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)]">
-                  <CardContent className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                        <FileText className="h-12 w-12 text-white" />
-                      </div>
-                      <h3 className="text-2xl font-bold mb-2">
-                        Select an item to view
-                      </h3>
-                      <p className="text-muted-foreground mb-6">
-                        Choose an item from the sidebar or create a new one to get
-                        started.
-                      </p>
-                      <Button
-                        onClick={createNewNote}
-                        className="bg-gradient-primary hover:opacity-90"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create New Note
-                      </Button>
+            ) : isMobile ? null : (
+              <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)]">
+                <CardContent className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                      <FileText className="h-12 w-12 text-white" />
                     </div>
-                  </CardContent>
-                </Card>
-              )
+                    <h3 className="text-2xl font-bold mb-2">
+                      Select an item to view
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      Choose an item from the sidebar or create a new one to get
+                      started.
+                    </p>
+                    <Button
+                      onClick={createNewNote}
+                      className="bg-gradient-primary hover:opacity-90"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create New Note
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>

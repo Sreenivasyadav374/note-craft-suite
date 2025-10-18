@@ -1,9 +1,18 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import { getNotes } from '../lib/api';
+import { getNotes as fetchNotesFromAPI } from '../lib/api';
 import { useAuthContext } from './AuthContext';
 import { usePreferences, SortOrder } from './PreferencesContext';
+import { dbPromise } from '../db'; // IndexedDB helper
+import {
+  createNote,
+  updateNote,
+  deleteNote as deleteNoteApi,
+} from "../lib/api";
 
-interface Note {
+  // ---------- Add / Update / Delete ----------
+  import { v4 as uuidv4 } from 'uuid';
+
+export interface Note {
   id: string;
   title: string;
   content: string;
@@ -12,8 +21,9 @@ interface Note {
   updatedAt: Date;
   reminderDate?: Date | null;
   notificationSent?: boolean;
-  type: "file" | "folder";
+  type: 'file' | 'folder';
   parentId?: string | null;
+  synced?: boolean; // for offline notes
 }
 
 interface NotesContextType {
@@ -22,6 +32,10 @@ interface NotesContextType {
   setNotes: (notes: Note[]) => void;
   isLoading: boolean;
   refreshNotes: () => Promise<void>;
+  addNoteOffline: (note: Note) => Promise<void>;
+  updateNoteOffline: (note: Note) => Promise<void>;
+  deleteNoteOffline: (noteId: string) => Promise<void>;
+  syncOfflineNotes: () => Promise<void>;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -32,6 +46,33 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const { token } = useAuthContext();
   const { preferences } = usePreferences();
 
+  // ---------- IndexedDB Helpers ----------
+  const saveNotesToIDB = async (notesToSave: Note[]) => {
+    const db = await dbPromise;
+    const tx = db.transaction('notes', 'readwrite');
+    const store = tx.objectStore('notes');
+    for (const note of notesToSave) {
+      await store.put(note);
+    }
+    await tx.done;
+  };
+
+  const removeNoteFromIDB = async (noteId: string) => {
+    const db = await dbPromise;
+    const tx = db.transaction('notes', 'readwrite');
+    const store = tx.objectStore('notes');
+    await store.delete(noteId);
+    await tx.done;
+  };
+
+  const loadNotesFromIDB = async (): Promise<Note[]> => {
+    const db = await dbPromise;
+    const tx = db.transaction('notes', 'readonly');
+    const store = tx.objectStore('notes');
+    return store.getAll();
+  };
+
+  // ---------- Sorting ----------
   const sortNotes = (notesToSort: Note[], sortOrder: SortOrder): Note[] => {
     const sorted = [...notesToSort];
     switch (sortOrder) {
@@ -46,45 +87,150 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const sortedNotes = useMemo(() => {
-    return sortNotes(notes, preferences.defaultSortOrder);
-  }, [notes, preferences.defaultSortOrder]);
+  const sortedNotes = useMemo(() => sortNotes(notes, preferences.defaultSortOrder), [
+    notes,
+    preferences.defaultSortOrder,
+  ]);
 
-  const refreshNotes = async () => {
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      const data = await getNotes(token);
-      const parsed = data.map((note: any) => ({
-        id: note._id,
-        title: note.title,
-        content: note.content,
-        tags: note.tags || [],
-        createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
-        updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
-        reminderDate: note.reminderDate ? new Date(note.reminderDate) : null,
-        notificationSent: note.notificationSent || false,
-        type: note.type || "file",
-        parentId: note.parentId || null,
-      }));
-      setNotes(parsed);
-    } catch (error) {
-      console.error("Error fetching notes:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // ---------- Offline Load ----------
   useEffect(() => {
-    refreshNotes();
+    const init = async () => {
+      // Load from IndexedDB first (offline support)
+      const offlineNotes = await loadNotesFromIDB();
+      if (offlineNotes.length > 0) setNotes(offlineNotes);
+      setIsLoading(false);
+
+      // Then refresh from API if online
+      if (token) await refreshNotes();
+    };
+    init();
   }, [token]);
 
+  // ---------- Refresh from API ----------
+  const refreshNotes = async () => {
+  if (!token) return;
+
+  setIsLoading(true);
+  try {
+    const data = await fetchNotesFromAPI(token);
+
+    const parsed = data.map((note: any) => ({
+      id: note._id,
+      title: note.title,
+      content: note.content,
+      tags: note.tags || [],
+      createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
+      updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
+      reminderDate: note.reminderDate ? new Date(note.reminderDate) : null,
+      notificationSent: note.notificationSent || false,
+      type: note.type || 'file',
+      parentId: note.parentId || null,
+      synced: true,
+    }));
+
+    // Load offline notes from IndexedDB
+    const offlineNotes = await loadNotesFromIDB();
+
+    // Merge API notes with offline notes (offline notes overwrite API if same id)
+    const mergedMap = new Map<string, Note>();
+    parsed.forEach((n) => mergedMap.set(n.id, n));
+    offlineNotes.forEach((n) => mergedMap.set(n.id, n));
+
+    const mergedNotes = Array.from(mergedMap.values());
+
+    // Update React state
+    setNotes(mergedNotes);
+
+    // Save merged notes to IndexedDB
+    await saveNotesToIDB(mergedNotes);
+
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const addNoteOffline = async (note: Note) => {
+  // Ensure a unique ID is always present
+  const safeNote = {
+    ...note,
+    id: note.id || uuidv4(), // generate one if it doesn't exist
+    updatedAt: new Date(),
+    createdAt: note.createdAt || new Date(),
+  };
+
+  // Update local state
+  setNotes((prev) => [safeNote, ...prev]);
+
+  // Save to IndexedDB
+  await saveNotesToIDB([safeNote]);
+};
+
+
+  const updateNoteOffline = async (note: Note) => {
+    setNotes((prev) => prev.map((n) => (n.id === note.id ? note : n)));
+    await saveNotesToIDB([note]);
+  };
+
+  const deleteNoteOffline = async (noteId: string) => {
+    setNotes((prev) => prev.filter((n) => n.id !== noteId));
+    await removeNoteFromIDB(noteId);
+  };
+
+  const syncOfflineNotes = async () => {
+  if (!navigator.onLine || !token) return;
+
+  const db = await dbPromise;
+  const tx = db.transaction('notes', 'readwrite');
+  const store = tx.objectStore('notes');
+
+  // Get all notes
+  const allNotes: Note[] = await store.getAll();
+
+  for (const note of allNotes) {
+    if (!note.synced) {
+      try {
+        // Send offline note to API
+        const savedNote = await createNote(
+          token,
+          note.title,
+          note.content,
+          note.tags,
+          note.type,
+          note.parentId
+        );
+
+        // Update note ID with server ID and mark as synced
+        const updatedNote: Note = {
+          ...note,
+          id: savedNote._id,
+          synced: true,
+          createdAt: savedNote.createdAt ? new Date(savedNote.createdAt) : note.createdAt,
+          updatedAt: savedNote.updatedAt ? new Date(savedNote.updatedAt) : new Date(),
+        };
+
+        // Remove the old offline note (with uuid) from IndexedDB and state
+        await removeNoteFromIDB(note.id);
+        setNotes((prev) => prev.filter((n) => n.id !== note.id));
+
+        // Save updated note to IndexedDB
+        await saveNotesToIDB([updatedNote]);
+
+        // Add the synced note to state
+        setNotes((prev) => [updatedNote, ...prev]);
+      } catch (err) {
+        console.error("Failed to sync note:", note.id, err);
+      }
+    }
+  }
+};
+
+
   return (
-    <NotesContext.Provider value={{ notes, sortedNotes, setNotes, isLoading, refreshNotes }}>
+    <NotesContext.Provider
+      value={{ notes, sortedNotes, setNotes, isLoading, refreshNotes, addNoteOffline, updateNoteOffline, deleteNoteOffline,syncOfflineNotes }}
+    >
       {children}
     </NotesContext.Provider>
   );
@@ -92,8 +238,6 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
 
 export const useNotes = () => {
   const context = useContext(NotesContext);
-  if (context === undefined) {
-    throw new Error('useNotes must be used within a NotesProvider');
-  }
+  if (!context) throw new Error('useNotes must be used within a NotesProvider');
   return context;
 };
