@@ -3,6 +3,7 @@ import { Camera, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { useConnection } from '../context/ConnectionContext';
 
 interface ProfilePictureUploadProps {
   currentPicture?: string;
@@ -20,6 +21,7 @@ export default function ProfilePictureUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { isOffline } = useConnection();
 
   const userInitials = username.substring(0, 2).toUpperCase();
 
@@ -129,7 +131,7 @@ export default function ProfilePictureUpload({
           title='Camera'
             onClick={() => fileInputRef.current?.click()}
             className="absolute bottom-0 right-0 p-2 bg-primary rounded-full shadow-lg hover:bg-primary/90 transition-smooth border-4 border-background"
-            disabled={uploading}
+            disabled={uploading||isOffline}
           >
             <Camera className="h-4 w-4 text-primary-foreground" />
           </button>
@@ -168,7 +170,7 @@ export default function ProfilePictureUpload({
             onClick={() => fileInputRef.current?.click()}
             variant="outline"
             className="w-full"
-            disabled={uploading}
+            disabled={uploading||isOffline}
           >
             <Camera className="h-4 w-4 mr-2" />
             Change Photo

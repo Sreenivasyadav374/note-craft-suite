@@ -8,6 +8,7 @@ import { useAuthContext } from "../context/AuthContext";
 import { decodeJWT } from "../lib/jwt";
 import { useToast } from "@/hooks/use-toast";
 import AppPreferences from "./AppPreferences";
+import { useConnection } from "@/context/ConnectionContext";
 
 export default function AccountSettings() {
   const { token, userProfile, changePassword } = useAuthContext();
@@ -17,6 +18,7 @@ export default function AccountSettings() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const {isOffline}=useConnection();
 
   const payload = token ? decodeJWT(token) : null;
   const username = userProfile?.name || payload?.username || "User";
@@ -150,6 +152,7 @@ export default function AccountSettings() {
               variant="outline"
               className="w-full"
               size="sm"
+              disabled={isOffline}
             >
               Change Password
             </Button>

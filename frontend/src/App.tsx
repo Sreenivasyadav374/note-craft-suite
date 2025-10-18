@@ -15,6 +15,7 @@ import NotesApp from "./components/NotesApp";
 import { useAuthContext, AuthProvider } from "./context/AuthContext";
 import { NotesProvider } from "./context/NotesContext";
 import { PreferencesProvider } from "./context/PreferencesContext";
+import { ConnectionProvider } from "./context/ConnectionContext";
 
 // Replace with your actual Google Client ID
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -38,6 +39,7 @@ const App = () => {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
+        <ConnectionProvider>
         <PreferencesProvider>
           <NotesProvider>
             <QueryClientProvider client={queryClient}>
@@ -59,6 +61,7 @@ const App = () => {
             </QueryClientProvider>
           </NotesProvider>
         </PreferencesProvider>
+        </ConnectionProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );
