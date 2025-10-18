@@ -83,6 +83,7 @@ const NotesApp = () => {
     updateNoteOffline,
     deleteNoteOffline,
     syncOfflineNotes,
+    removeNoteFromIDB
   } = useNotes();
   const { preferences } = usePreferences();
   const [searchTerm, setSearchTerm] = useState("");
@@ -276,30 +277,49 @@ const NotesApp = () => {
     }
   };
 
-  const confirmDelete = async () => {
-    if (!token || !noteToDelete) return;
-    try {
+// --- Delete (confirmDelete) ---
+const confirmDelete = async () => {
+  if (!noteToDelete) return;
+
+  try {
+    if (navigator.onLine && token ) {
+      // ✅ Delete from server
       await deleteNoteApi(token, noteToDelete.id);
-      setNotes(notes.filter((note) => note.id !== noteToDelete.id));
-      if (selectedNote?.id === noteToDelete.id) {
-        setSelectedNote(null);
-        setIsEditing(false);
-      }
-      toast({
-        title: "Item deleted",
-        description: "Item has been successfully removed.",
-      });
-    } catch (error: any) {
-      console.error("Error deleting item:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete item.",
-        variant: "destructive",
-      });
-    } finally {
-      setNoteToDelete(null);
+
+      // ✅ Also remove from IndexedDB (to prevent reappearing after refresh)
+      await removeNoteFromIDB(noteToDelete.id);
+    } else {
+      // 📴 Offline delete
+      await deleteNoteOffline(noteToDelete.id);
     }
-  };
+
+    // ✅ Update UI
+    setNotes(notes.filter((note) => note.id !== noteToDelete.id));
+
+    if (selectedNote?.id === noteToDelete.id) {
+      setSelectedNote(null);
+      setIsEditing(false);
+    }
+
+    toast({
+      title: "Item deleted",
+      description: navigator.onLine
+        ? "Item removed successfully."
+        : "Deleted offline — will sync later.",
+    });
+  } catch (error: any) {
+    console.error("Error deleting item:", error);
+    toast({
+      title: "Error",
+      description: error.message || "Failed to delete item.",
+      variant: "destructive",
+    });
+  } finally {
+    setNoteToDelete(null);
+  }
+};
+
+
 
   const selectNote = (note: Note) => {
     setSelectedNote(note);
@@ -334,26 +354,29 @@ const NotesApp = () => {
     }
   };
 
-  const saveNote = async () => {
-    if (!selectedNote || !token) return;
+ // --- Update (saveNote) ---
+const saveNote = async () => {
+  if (!selectedNote) return;
 
-    try {
-      const tagsArray = editTags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0);
-      const contentToSave = selectedNote.type === "file" ? editContent : "";
-      const reminderDateValue = editReminderDate
-        ? new Date(editReminderDate).toISOString()
-        : null;
+  try {
+    const tagsArray = editTags
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0);
+    const contentToSave = selectedNote.type === "file" ? editContent : "";
+    const reminderDateValue = editReminderDate
+      ? new Date(editReminderDate).toISOString()
+      : null;
 
+    let updatedNote: Note;
+
+    if (navigator.onLine && token && selectedNote.synced !== false) {
+      // --- ONLINE UPDATE ---
       const updated = await updateNote(
         token,
         selectedNote.id,
         editTitle.trim() ||
-          (selectedNote.type === "folder"
-            ? "Untitled Folder"
-            : "Untitled Note"),
+          (selectedNote.type === "folder" ? "Untitled Folder" : "Untitled Note"),
         contentToSave,
         tagsArray,
         selectedNote.type,
@@ -361,39 +384,56 @@ const NotesApp = () => {
         reminderDateValue
       );
 
-      const updatedNote: Note = {
+      updatedNote = {
         id: updated._id,
         title: updated.title,
         content: updated.content,
         tags: updated.tags || [],
-        createdAt: updated.createdAt ? new Date(updated.createdAt) : new Date(),
-        updatedAt: updated.updatedAt ? new Date(updated.updatedAt) : new Date(),
+        createdAt: new Date(updated.createdAt),
+        updatedAt: new Date(updated.updatedAt),
         reminderDate: updated.reminderDate
           ? new Date(updated.reminderDate)
           : null,
         notificationSent: updated.notificationSent || false,
         type: updated.type,
         parentId: updated.parentId || null,
+        synced: true,
       };
-
-      setNotes(
-        notes.map((note) => (note.id === selectedNote.id ? updatedNote : note))
-      );
-      setSelectedNote(updatedNote);
-      setIsEditing(false);
-      toast({
-        title: "Item saved",
-        description: "Your changes have been saved successfully.",
-      });
-    } catch (error: any) {
-      console.error("Error saving item:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save changes.",
-        variant: "destructive",
-      });
+    } else {
+      // --- OFFLINE UPDATE ---
+      updatedNote = {
+        ...selectedNote,
+        title: editTitle.trim(),
+        content: contentToSave,
+        tags: tagsArray,
+        updatedAt: new Date(),
+        reminderDate: reminderDateValue ? new Date(reminderDateValue) : null,
+        synced: false,
+      };
     }
-  };
+
+    // Update locally (IndexedDB + Context)
+    await updateNoteOffline(updatedNote);
+
+    setSelectedNote(updatedNote);
+    setIsEditing(false);
+
+    toast({
+      title: "Item saved",
+      description: navigator.onLine
+        ? "Changes saved successfully."
+        : "Saved offline — will sync when online.",
+    });
+  } catch (error: any) {
+    console.error("Error saving item:", error);
+    toast({
+      title: "Error",
+      description: error.message || "Failed to save changes.",
+      variant: "destructive",
+    });
+  }
+};
+
 
   const cancelEditing = () => {
     setIsEditing(false);

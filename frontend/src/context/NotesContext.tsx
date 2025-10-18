@@ -24,6 +24,7 @@ export interface Note {
   type: 'file' | 'folder';
   parentId?: string | null;
   synced?: boolean; // for offline notes
+  action?: 'create' | 'update' | 'delete'; // <-- add this line
 }
 
 interface NotesContextType {
@@ -36,6 +37,7 @@ interface NotesContextType {
   updateNoteOffline: (note: Note) => Promise<void>;
   deleteNoteOffline: (noteId: string) => Promise<void>;
   syncOfflineNotes: () => Promise<void>;
+  removeNoteFromIDB:(noteId: string)=>Promise<void>;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -168,68 +170,143 @@ const addNoteOffline = async (note: Note) => {
 };
 
 
-  const updateNoteOffline = async (note: Note) => {
-    setNotes((prev) => prev.map((n) => (n.id === note.id ? note : n)));
-    await saveNotesToIDB([note]);
+const updateNoteOffline = async (note: Note) => {
+  const updated: Note = {
+    ...note,
+    synced: false,
+    action: 'update',
   };
 
-  const deleteNoteOffline = async (noteId: string) => {
-    setNotes((prev) => prev.filter((n) => n.id !== noteId));
-    await removeNoteFromIDB(noteId);
+  setNotes((prev) =>
+    prev.map((n) => (n.id === note.id ? updated : n))
+  );
+
+  await saveNotesToIDB([updated]);
+};
+
+
+const deleteNoteOffline = async (noteId: string) => {
+  const note = notes.find((n) => n.id === noteId);
+  if (!note) return;
+
+  // Always mark delete — even for synced notes
+  const marked: Note = {
+    ...note,
+    synced: false,
+    action: 'delete',
   };
 
-  const syncOfflineNotes = async () => {
+  // Save it back to IndexedDB for sync tracking
+  await saveNotesToIDB([marked]);
+
+  // Remove from UI immediately
+  setNotes((prev) => prev.filter((n) => n.id !== noteId));
+};
+
+
+
+const syncOfflineNotes = async () => {
   if (!navigator.onLine || !token) return;
 
   const db = await dbPromise;
-  const tx = db.transaction('notes', 'readwrite');
-  const store = tx.objectStore('notes');
-
-  // Get all notes
+  const tx = db.transaction("notes", "readwrite");
+  const store = tx.objectStore("notes");
   const allNotes: Note[] = await store.getAll();
 
   for (const note of allNotes) {
-    if (!note.synced) {
+    // Process only unsynced or pending delete notes
+    if (!note.synced || note.action === "delete") {
       try {
-        // Send offline note to API
-        const savedNote = await createNote(
-          token,
-          note.title,
-          note.content,
-          note.tags,
-          note.type,
-          note.parentId
-        );
+        // 🗑 DELETE flow
+        if (note.action === "delete") {
+          if (!note.id.includes("-")) {
+            // Delete only if it exists on server (Mongo ObjectId)
+            await deleteNoteApi(token, note.id);
+          }
 
-        // Update note ID with server ID and mark as synced
-        const updatedNote: Note = {
-          ...note,
-          id: savedNote._id,
-          synced: true,
-          createdAt: savedNote.createdAt ? new Date(savedNote.createdAt) : note.createdAt,
-          updatedAt: savedNote.updatedAt ? new Date(savedNote.updatedAt) : new Date(),
-        };
+          // Remove from IndexedDB and UI
+          await removeNoteFromIDB(note.id);
+          setNotes((prev) => prev.filter((n) => n.id !== note.id));
+          console.log("✅ Synced deletion:", note.id);
+          continue;
+        }
 
-        // Remove the old offline note (with uuid) from IndexedDB and state
-        await removeNoteFromIDB(note.id);
-        setNotes((prev) => prev.filter((n) => n.id !== note.id));
+        // ✏️ UPDATE flow
+        if (note.action === "update" && !note.id.includes("-")) {
+          // Update only if it has a Mongo ObjectId
+          const updated = await updateNote(
+            token,
+            note.id,
+            note.title,
+            note.content,
+            note.tags,
+            note.type,
+            note.parentId,
+            note.reminderDate ? note.reminderDate.toISOString() : null
+          );
 
-        // Save updated note to IndexedDB
-        await saveNotesToIDB([updatedNote]);
+          const syncedNote: Note = {
+            ...note,
+            id: updated._id,
+            synced: true,
+            action: undefined,
+            createdAt: new Date(updated.createdAt),
+            updatedAt: new Date(updated.updatedAt),
+          };
 
-        // Add the synced note to state
-        setNotes((prev) => [updatedNote, ...prev]);
+          await saveNotesToIDB([syncedNote]);
+          setNotes((prev) =>
+            prev.map((n) => (n.id === note.id ? syncedNote : n))
+          );
+          console.log("✅ Synced update:", note.id);
+          continue;
+        }
+
+        // 🆕 CREATE flow (for UUID or action:create)
+        if (note.action === "create" || note.id.includes("-")) {
+          const saved = await createNote(
+            token,
+            note.title,
+            note.content,
+            note.tags,
+            note.type,
+            note.parentId
+          );
+
+          const syncedNote: Note = {
+            ...note,
+            id: saved._id, // replace UUID with Mongo _id
+            synced: true,
+            action: undefined,
+            createdAt: new Date(saved.createdAt),
+            updatedAt: new Date(saved.updatedAt),
+          };
+
+          // Remove old UUID version and save the new one
+          await removeNoteFromIDB(note.id);
+          await saveNotesToIDB([syncedNote]);
+
+          setNotes((prev) => [
+            syncedNote,
+            ...prev.filter((n) => n.id !== note.id),
+          ]);
+          console.log("✅ Synced creation:", note.title);
+          continue;
+        }
       } catch (err) {
-        console.error("Failed to sync note:", note.id, err);
+        console.error("❌ Failed to sync note:", note.id, err);
       }
     }
   }
+
+  console.log("✨ Offline sync complete");
 };
+
 
 
   return (
     <NotesContext.Provider
-      value={{ notes, sortedNotes, setNotes, isLoading, refreshNotes, addNoteOffline, updateNoteOffline, deleteNoteOffline,syncOfflineNotes }}
+      value={{ notes, sortedNotes, setNotes, isLoading, refreshNotes, addNoteOffline, updateNoteOffline, deleteNoteOffline,syncOfflineNotes,removeNoteFromIDB }}
     >
       {children}
     </NotesContext.Provider>
