@@ -84,9 +84,19 @@ export async function googleLogin(credential: string) {
   }
 }
 
-export async function getNotes(token: string) {
+// Define the expected structure of the paginated response
+export interface PaginatedNotesResponse {
+  notes: any[]; // Use 'any' or define a more specific Note type if available in api.ts
+  totalCount: number;
+  limit: number;
+  offset: number;
+}
+export async function getNotes(token: string, limit: number, offset: number): Promise<PaginatedNotesResponse> {
   try {
-    const res = await fetchWithTimeout(`${API_URL}/notes`, {
+    // Construct URL with query parameters for pagination
+    const url = `${API_URL}/notes?limit=${limit}&offset=${offset}`;
+
+    const res = await fetchWithTimeout(url, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
@@ -97,8 +107,8 @@ export async function getNotes(token: string) {
       const error = await res.json().catch(() => ({ message: 'Failed to fetch notes' }));
       throw new Error(error.message || 'Failed to fetch notes');
     }
-    
-    return res.json();
+
+    return res.json() as Promise<PaginatedNotesResponse>;
   } catch (error: any) {
     throw new Error(error.message || 'Unable to connect to server. Please try again later.');
   }

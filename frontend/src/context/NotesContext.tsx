@@ -1,16 +1,32 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
-import { getNotes as fetchNotesFromAPI } from '../lib/api';
-import { useAuthContext } from './AuthContext';
-import { usePreferences, SortOrder } from './PreferencesContext';
-import { dbPromise } from '../db'; // IndexedDB helper
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
+import { getNotes as fetchNotesFromAPI } from "../lib/api";
+import { useAuthContext } from "./AuthContext";
+import { usePreferences, SortOrder } from "./PreferencesContext";
+import {
+  dbPromise,
+  saveNotesToIDB,
+  removeNoteFromIDB,
+  getNotesFromIDB,
+  getNotesForSyncFromIDB,
+} from "../db"; // IndexedDB helper
 import {
   createNote,
   updateNote,
   deleteNote as deleteNoteApi,
 } from "../lib/api";
+import { useConnection } from "../context/ConnectionContext";
 
-  // ---------- Add / Update / Delete ----------
-  import { v4 as uuidv4 } from 'uuid';
+// ---------- Add / Update / Delete ----------
+import { v4 as uuidv4 } from "uuid";
 
 export interface Note {
   id: string;
@@ -21,10 +37,10 @@ export interface Note {
   updatedAt: Date;
   reminderDate?: Date | null;
   notificationSent?: boolean;
-  type: 'file' | 'folder';
+  type: "file" | "folder";
   parentId?: string | null;
   synced?: boolean; // for offline notes
-  action?: 'create' | 'update' | 'delete'; // <-- add this line
+  action?: "create" | "update" | "delete"; // <-- add this line
 }
 
 interface NotesContextType {
@@ -32,238 +48,200 @@ interface NotesContextType {
   sortedNotes: Note[];
   setNotes: (notes: Note[]) => void;
   isLoading: boolean;
-  refreshNotes: () => Promise<void>;
+  refreshNotes: (offset?: number) => Promise<void>; // Modified to accept offset
+  loadMoreNotes: () => Promise<void>; // New function to load the next page
+  hasMore: boolean; // Indicates if there are more notes to load
+  totalCount: number; // Total number of notes available on the server
   addNoteOffline: (note: Note) => Promise<void>;
   updateNoteOffline: (note: Note) => Promise<void>;
   deleteNoteOffline: (noteId: string) => Promise<void>;
   syncOfflineNotes: () => Promise<void>;
-  removeNoteFromIDB:(noteId: string)=>Promise<void>;
+  removeNoteFromIDB: (noteId: string) => Promise<void>;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
 
-export const NotesProvider = ({ children }: { children: ReactNode }) => {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { token } = useAuthContext();
+const NOTES_LIMIT = 20; // Define the page size constant
+
+export function NotesProvider({ children }: { children: ReactNode }) {
+  const { token, isAuthenticated } = useAuthContext();
+  const { isOffline } = useConnection();
   const { preferences } = usePreferences();
+  const sortOrder = preferences.defaultSortOrder;
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // ---------- IndexedDB Helpers ----------
-  const saveNotesToIDB = async (notesToSave: Note[]) => {
-    const db = await dbPromise;
-    const tx = db.transaction('notes', 'readwrite');
-    const store = tx.objectStore('notes');
-    for (const note of notesToSave) {
-      await store.put(note);
-    }
-    await tx.done;
-  };
+  // --- New Pagination State ---
+  const [offset, setOffset] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  // Determine if there are more notes to fetch (total fetched < total available)
+  const hasMore = notes.length < totalCount;
+  // ----------------------------
 
-  const removeNoteFromIDB = async (noteId: string) => {
-    const db = await dbPromise;
-    const tx = db.transaction('notes', 'readwrite');
-    const store = tx.objectStore('notes');
-    await store.delete(noteId);
-    await tx.done;
-  };
+  const isReplacingRef = useRef(false);
 
-  const loadNotesFromIDB = async (): Promise<Note[]> => {
-    const db = await dbPromise;
-    const tx = db.transaction('notes', 'readonly');
-    const store = tx.objectStore('notes');
-    return store.getAll();
-  };
+  const fetchNotes = useCallback(
+    async (currentOffset: number) => {
+      if (!token) return;
+      setIsLoading(true);
+      try {
+        // Pass limit and offset to the API
+        // fetchNotesFromAPI signature must be updated to (token, limit, offset)
+        const response = await fetchNotesFromAPI(
+          token,
+          NOTES_LIMIT,
+          currentOffset
+        );
 
-  // ---------- Sorting ----------
-  const sortNotes = (notesToSort: Note[], sortOrder: SortOrder): Note[] => {
-    const sorted = [...notesToSort];
-    switch (sortOrder) {
-      case 'recent':
-        return sorted.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-      case 'alphabetical':
-        return sorted.sort((a, b) => a.title.localeCompare(b.title));
-      case 'oldest':
-        return sorted.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-      default:
-        return sorted;
-    }
-  };
+        const remoteNotes: Note[] = response.notes.map((note: any) => ({
+          id: note._id,
+          title: note.title,
+          content: note.content,
+          tags: note.tags || [],
+          createdAt: new Date(note.createdAt),
+          updatedAt: new Date(note.updatedAt),
+          reminderDate: note.reminderDate ? new Date(note.reminderDate) : null,
+          notificationSent: note.notificationSent,
+          type: note.type,
+          parentId: note.parentId,
+          synced: true,
+          action: undefined,
+        }));
 
-  const sortedNotes = useMemo(() => sortNotes(notes, preferences.defaultSortOrder), [
-    notes,
-    preferences.defaultSortOrder,
-  ]);
+        setNotes((prevNotes) => {
+          // ✅ For numbered pagination (refreshNotes), always replace.
+          // We'll only append if loadMoreNotes() specifically requested it.
+          if (currentOffset === 0 || isReplacingRef.current) {
+            return remoteNotes;
+          } else {
+            // Infinite scroll behavior
+            const newNotesMap = new Map();
+            prevNotes.forEach((note) => newNotesMap.set(note.id, note));
+            remoteNotes.forEach((note) => newNotesMap.set(note.id, note));
+            return Array.from(newNotesMap.values());
+          }
+        });
 
-  // ---------- Offline Load ----------
-  useEffect(() => {
-    const init = async () => {
-      // Load from IndexedDB first (offline support)
-      const offlineNotes = await loadNotesFromIDB();
-      if (offlineNotes.length > 0) setNotes(offlineNotes);
-      setIsLoading(false);
+        // Update pagination state
+        setTotalCount(response.totalCount);
+        // Set the next starting point for the subsequent fetch
+        setOffset(currentOffset + NOTES_LIMIT);
 
-      // Then refresh from API if online
-      if (token) await refreshNotes();
-    };
-    init();
-  }, [token]);
-
-  // ---------- Refresh from API ----------
-  const refreshNotes = async () => {
-  if (!token) return;
-
-  setIsLoading(true);
-  try {
-    const data = await fetchNotesFromAPI(token);
-
-    const parsed = data.map((note: any) => ({
-      id: note._id,
-      title: note.title,
-      content: note.content,
-      tags: note.tags || [],
-      createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
-      updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date(),
-      reminderDate: note.reminderDate ? new Date(note.reminderDate) : null,
-      notificationSent: note.notificationSent || false,
-      type: note.type || 'file',
-      parentId: note.parentId || null,
-      synced: true,
-    }));
-
-    // Load offline notes from IndexedDB
-    const offlineNotes = await loadNotesFromIDB();
-
-    // Merge API notes with offline notes (offline notes overwrite API if same id)
-    const mergedMap = new Map<string, Note>();
-    parsed.forEach((n) => mergedMap.set(n.id, n));
-    offlineNotes.forEach((n) => mergedMap.set(n.id, n));
-
-    const mergedNotes = Array.from(mergedMap.values());
-
-    // Update React state
-    setNotes(mergedNotes);
-
-    // Save merged notes to IndexedDB
-    await saveNotesToIDB(mergedNotes);
-
-  } catch (error) {
-    console.error('Error fetching notes:', error);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-const addNoteOffline = async (note: Note) => {
-  // Ensure a unique ID is always present
-  const safeNote = {
-    ...note,
-    id: note.id || uuidv4(), // generate one if it doesn't exist
-    updatedAt: new Date(),
-    createdAt: note.createdAt || new Date(),
-  };
-
-  // Update local state
-  setNotes((prev) => [safeNote, ...prev]);
-
-  // Save to IndexedDB
-  await saveNotesToIDB([safeNote]);
-};
-
-
-const updateNoteOffline = async (note: Note) => {
-  const updated: Note = {
-    ...note,
-    synced: false,
-    action: 'update',
-  };
-
-  setNotes((prev) =>
-    prev.map((n) => (n.id === note.id ? updated : n))
+        // Save the fetched notes to IndexedDB for initial offline access
+        await saveNotesToIDB(remoteNotes);
+      } catch (error) {
+        console.error("Failed to fetch notes from API:", error);
+        // Fallback to IndexedDB if online fetch fails
+        const idbNotes = await getNotesFromIDB();
+        setNotes(idbNotes);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [token]
   );
 
-  await saveNotesToIDB([updated]);
-};
-
-
-const deleteNoteOffline = async (noteId: string) => {
-  const note = notes.find((n) => n.id === noteId);
-  if (!note) return;
-
-  // Always mark delete — even for synced notes
-  const marked: Note = {
-    ...note,
-    synced: false,
-    action: 'delete',
-  };
-
-  // Save it back to IndexedDB for sync tracking
-  await saveNotesToIDB([marked]);
-
-  // Remove from UI immediately
-  setNotes((prev) => prev.filter((n) => n.id !== noteId));
-};
-
-
-
-const syncOfflineNotes = async () => {
-  if (!navigator.onLine || !token) return;
-
-  const db = await dbPromise;
-  const tx = db.transaction("notes", "readwrite");
-  const store = tx.objectStore("notes");
-  const allNotes: Note[] = await store.getAll();
-
-  for (const note of allNotes) {
-    // Process only unsynced or pending delete notes
-    if (!note.synced || note.action === "delete") {
+  // Combined fetch for initial load and data refresh
+  const refreshNotes = useCallback(
+    async (newOffset = 0) => {
+      if (!isAuthenticated) return;
+      isReplacingRef.current = true; // ✅ tell fetchNotes to REPLACE notes
       try {
-        // 🗑 DELETE flow
-        if (note.action === "delete") {
-          if (!note.id.includes("-")) {
-            // Delete only if it exists on server (Mongo ObjectId)
-            await deleteNoteApi(token, note.id);
-          }
+        if (!isOffline) {
+          await fetchNotes(newOffset);
+        } else {
+          const idbNotes = await getNotesFromIDB();
+          setNotes(idbNotes);
+          setTotalCount(idbNotes.length);
+          setOffset(idbNotes.length);
+        }
+      } finally {
+        isReplacingRef.current = false;
+      }
+    },
+    [isAuthenticated, isOffline, fetchNotes]
+  );
 
-          // Remove from IndexedDB and UI
+  const loadMoreNotes = useCallback(async () => {
+    if (isOffline || isLoading || !hasMore) return;
+    await fetchNotes(offset);
+  }, [isOffline, isLoading, hasMore, offset, fetchNotes]);
+
+  // Initial Data Load (and refetch on auth/online status change)
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Start the initial load from offset 0
+      refreshNotes(0);
+    }
+  }, [isAuthenticated, refreshNotes]);
+
+  // ... [omitting sortedNotes useMemo for brevity]
+  const sortedNotes = useMemo(() => {
+    const sortKey = sortOrder === "recent" ? "updatedAt" : "title";
+    return [...notes].sort((a, b) => {
+      if (sortKey === "title") {
+        return a.title.localeCompare(b.title);
+      }
+      // Sort in-memory to handle merged remote/offline notes
+      return b.updatedAt.getTime() - a.updatedAt.getTime();
+    });
+  }, [notes, sortOrder]);
+
+  // Placeholder IDB helper functions (you would implement these fully in db.ts)
+  // async function saveNotesToIDB(notes: Note[]): Promise<void> { /* ... */ }
+  // async function removeNoteFromIDB(noteId: string): Promise<void> { /* ... */ }
+  // async function getNotesFromIDB(): Promise<Note[]> { /* ... */ }
+  // async function getNotesForSyncFromIDB(): Promise<Note[]> { /* ... */ }
+
+  // ---------- Add / Update / Delete Offline Handlers ----------
+
+  // Use the new simplified sync logic provided in the prompt's context snippet
+  const syncOfflineNotes = async () => {
+    if (!token) return;
+    console.log("Starting offline sync...");
+
+    const offlineNotes = await getNotesForSyncFromIDB();
+
+    for (const note of offlineNotes) {
+      try {
+        if (note.action === "delete") {
+          await deleteNoteApi(token, note.id);
           await removeNoteFromIDB(note.id);
           setNotes((prev) => prev.filter((n) => n.id !== note.id));
           console.log("✅ Synced deletion:", note.id);
           continue;
         }
 
-        // ✏️ UPDATE flow
-        if (note.action === "update" && !note.id.includes("-")) {
-          // Update only if it has a Mongo ObjectId
-          const updated = await updateNote(
+        // Handle updates (synced notes that have been modified)
+        if (note.action === "update" && note.synced) {
+          const saved = await updateNote(
             token,
             note.id,
             note.title,
             note.content,
             note.tags,
             note.type,
-            note.parentId,
-            note.reminderDate ? note.reminderDate.toISOString() : null
+            note.parentId
           );
 
           const syncedNote: Note = {
             ...note,
-            id: updated._id,
             synced: true,
             action: undefined,
-            createdAt: new Date(updated.createdAt),
-            updatedAt: new Date(updated.updatedAt),
+            createdAt: new Date(saved.createdAt),
+            updatedAt: new Date(saved.updatedAt),
           };
 
           await saveNotesToIDB([syncedNote]);
           setNotes((prev) =>
             prev.map((n) => (n.id === note.id ? syncedNote : n))
           );
-          console.log("✅ Synced update:", note.id);
+          console.log("✅ Synced update:", note.title);
           continue;
         }
 
-        // 🆕 CREATE flow (for UUID or action:create)
-        if (note.action === "create" || note.id.includes("-")) {
+        // Handle creations (notes with UUID, indicating a new offline creation)
+        if (note.action === "create" || !note.synced || note.id.includes("-")) {
           const saved = await createNote(
             token,
             note.title,
@@ -297,24 +275,102 @@ const syncOfflineNotes = async () => {
         console.error("❌ Failed to sync note:", note.id, err);
       }
     }
-  }
 
-  console.log("✨ Offline sync complete");
-};
+    console.log("✨ Offline sync complete");
+  };
 
+  const addNoteOffline = async (note: Note) => {
+    const newNote = {
+      ...note,
+      id: uuidv4(), // Use UUID for temporary offline ID
+      synced: false,
+      action: "create",
+      updatedAt: new Date(),
+      createdAt: new Date(),
+    } as Note;
 
+    // Add to local state (at the start to appear immediately)
+    setNotes((prev) => [
+      newNote,
+      ...prev.map((n) =>
+        n.id === note.id ? { ...n, updatedAt: new Date() } : n
+      ),
+    ]);
+
+    // Save to IDB
+    await saveNotesToIDB([newNote]);
+
+    // Optimistically sync if online
+    if (!isOffline) syncOfflineNotes();
+  };
+
+  const updateNoteOffline = async (updatedNote: Note) => {
+    const noteToSave: Note = {
+      ...updatedNote,
+      synced: false,
+      action: updatedNote.action === "create" ? "create" : "update", // Preserve 'create' action if it was a new note
+      updatedAt: new Date(),
+    };
+
+    // Update local state
+    setNotes((prev) =>
+      prev.map((n) => (n.id === noteToSave.id ? noteToSave : n))
+    );
+
+    // Save to IDB
+    await saveNotesToIDB([noteToSave]);
+
+    // Optimistically sync if online
+    if (!isOffline) syncOfflineNotes();
+  };
+
+  const deleteNoteOffline = async (noteId: string) => {
+    // 1. Update local state
+    setNotes((prev) => prev.filter((n) => n.id !== noteId));
+
+    // 2. Mark for deletion in IDB
+    const noteToDelete = notes.find((n) => n.id === noteId);
+    if (noteToDelete && noteToDelete.synced) {
+      // If it was synced, mark for remote deletion
+      await saveNotesToIDB([
+        { ...noteToDelete, action: "delete", synced: false },
+      ]);
+    } else {
+      // If it was a purely offline creation, just remove from IDB
+      await removeNoteFromIDB(noteId);
+    }
+
+    // 3. Optimistically sync if online
+    if (!isOffline) syncOfflineNotes();
+  };
 
   return (
     <NotesContext.Provider
-      value={{ notes, sortedNotes, setNotes, isLoading, refreshNotes, addNoteOffline, updateNoteOffline, deleteNoteOffline,syncOfflineNotes,removeNoteFromIDB }}
+      value={{
+        notes,
+        sortedNotes,
+        setNotes,
+        isLoading,
+        refreshNotes,
+        loadMoreNotes, // Exported new function
+        hasMore, // Exported new state
+        totalCount, // Exported new state
+        addNoteOffline,
+        updateNoteOffline,
+        deleteNoteOffline,
+        syncOfflineNotes,
+        removeNoteFromIDB,
+      }}
     >
       {children}
     </NotesContext.Provider>
   );
-};
+}
 
 export const useNotes = () => {
   const context = useContext(NotesContext);
-  if (!context) throw new Error('useNotes must be used within a NotesProvider');
+  if (context === undefined) {
+    throw new Error("useNotes must be used within a NotesProvider");
+  }
   return context;
 };

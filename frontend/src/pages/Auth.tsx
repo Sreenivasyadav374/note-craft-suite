@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { useAuthContext } from '../context/AuthContext';
-import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
-import { useToast } from '@/hooks/use-toast';
-import { Spinner } from '@/components/ui/spinner';
+import { useState, useEffect, useRef } from "react";
+import { useAuthContext } from "../context/AuthContext";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import { useToast } from "@/hooks/use-toast";
+import { Spinner } from "@/components/ui/spinner";
+import "@/styles/auth.css"; // Assuming you have a CSS file for styles
 
 // // Dynamically load the Spline viewer script only once
 // function useSplineScript() {
@@ -18,25 +19,25 @@ import { Spinner } from '@/components/ui/spinner';
 //   }, []);
 // }
 
-
 //   useSplineScript();
 export default function AuthPage() {
-  const { register, login, googleLogin, error, loading, isAuthenticated } = useAuthContext();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const { register, login, googleLogin, error, loading, isAuthenticated } =
+    useAuthContext();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
-   if (isAuthenticated) {
+  if (isAuthenticated) {
     return <Navigate to="/notes" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'login') {
+    if (mode === "login") {
       await login(username, password);
       //navigate('/notes', { replace: true });
     } else {
@@ -48,12 +49,12 @@ export default function AuthPage() {
     setGoogleLoading(true);
     try {
       await googleLogin(credentialResponse.credential);
-      toast({ title: 'Success', description: 'Signed in with Google!' });
+      toast({ title: "Success", description: "Signed in with Google!" });
     } catch (err: any) {
-      toast({ 
-        title: 'Error', 
-        description: err.message || 'Google sign-in failed', 
-        variant: 'destructive' 
+      toast({
+        title: "Error",
+        description: err.message || "Google sign-in failed",
+        variant: "destructive",
       });
     } finally {
       setGoogleLoading(false);
@@ -62,10 +63,10 @@ export default function AuthPage() {
 
   const handleGoogleError = () => {
     setGoogleLoading(false);
-    toast({ 
-      title: 'Error', 
-      description: 'Google sign-in failed', 
-      variant: 'destructive' 
+    toast({
+      title: "Error",
+      description: "Google sign-in failed",
+      variant: "destructive",
     });
   };
 
@@ -75,15 +76,15 @@ export default function AuthPage() {
       <div className="absolute inset-0 overflow-hidden">
         {/* Main luxury gradient overlay */}
         <div className="absolute inset-0 bg-gradient-hero opacity-90"></div>
-        
+
         {/* Floating luxury orbs */}
         <div className="absolute top-20 left-20 w-96 h-96 bg-gradient-to-r from-primary-glow/20 to-primary-accent/20 rounded-full mix-blend-multiply filter blur-3xl animate-[float_8s_ease-in-out_infinite]"></div>
         <div className="absolute top-40 right-40 w-80 h-80 bg-gradient-to-l from-primary-accent/15 to-primary-glow/15 rounded-full mix-blend-multiply filter blur-2xl animate-[float_10s_ease-in-out_infinite_reverse]"></div>
         <div className="absolute bottom-32 left-32 w-72 h-72 bg-gradient-to-br from-primary-glow/25 to-primary-accent/10 rounded-full mix-blend-multiply filter blur-3xl animate-[float_9s_ease-in-out_infinite_1s]"></div>
-        
+
         {/* Luxury mesh gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary-accent/5 via-transparent to-primary-glow/5"></div>
-        
+
         {/* Animated luxury particles */}
         <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary-accent rounded-full animate-pulse opacity-60"></div>
         <div className="absolute top-3/4 left-1/3 w-1 h-1 bg-primary-glow rounded-full animate-ping opacity-40"></div>
@@ -91,46 +92,68 @@ export default function AuthPage() {
       </div>
 
       {/* Premium Auth Card */}
-      <div className="relative z-10 w-full max-w-md animate-fade-in"
-           style={{ animationDelay: '0.2s', animationFillMode: 'both' }}>
-        <div className="w-full p-8 rounded-3xl bg-card/95 backdrop-blur-2xl border border-border/20 shadow-luxury transition-all duration-700 hover:shadow-glow hover:scale-[1.02] animate-scale-in"
-             style={{
-               animationDelay: '0.5s',
-               animationFillMode: 'both',
-               background: 'rgba(255, 255, 255, 0.95)',
-               backdropFilter: 'blur(20px) saturate(180%)',
-               WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-             }}>
-          
+      <div
+        className="relative z-10 w-full max-w-md animate-fade-in"
+        style={{ animationDelay: "0.2s", animationFillMode: "both" }}
+      >
+        <div
+          className="w-full p-8 rounded-3xl bg-card/95 backdrop-blur-2xl border border-border/20 shadow-luxury transition-all duration-700 hover:shadow-glow hover:scale-[1.02] animate-scale-in"
+          style={{
+            animationDelay: "0.5s",
+            animationFillMode: "both",
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          }}
+        >
           {/* Luxury Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-display font-bold mb-2 bg-gradient-primary bg-clip-text text-transparent tracking-tight">
-              {mode === 'login' ? 'Welcome Back' : 'Join Us'}
+              {mode === "login" ? "Welcome Back" : "Join Us"}
             </h1>
             <p className="text-muted-foreground font-medium">
-              {mode === 'login' ? 'Sign in to your account' : 'Create your luxury account'}
+              {mode === "login"
+                ? "Sign in to your account"
+                : "Create your luxury account"}
             </p>
           </div>
 
           {/* Premium Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
-              <div>
+              <div className="input__container">
+                <div className="shadow__input"></div>
+                <button title="Email" className="input__button__shadow">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="#000000"
+                    width="20px"
+                    height="20px"
+                  >
+                    <path d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+                  </svg>
+                </button>
                 <input
-                  className="w-full h-12 px-4 bg-input/50 border border-border/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent placeholder:text-muted-foreground font-medium text-sm transition-all duration-300 hover:border-border/50"
+                  type="text"
+                  name="username"
+                  className="input__search"
                   placeholder="Enter your username"
                   value={username}
-                  onChange={e => setUsername(e.target.value)}
+                  onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
                 />
               </div>
-              <div>
+              <div className="input__container">
+                <div className="shadow__input"></div>
                 <input
-                  className="w-full h-12 px-4 bg-input/50 border border-border/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-transparent placeholder:text-muted-foreground font-medium text-sm transition-all duration-300 hover:border-border/50"
+                  name="Password"
+                  className="input__search"
                   placeholder="Enter your password"
                   type="password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
                 />
               </div>
@@ -152,8 +175,10 @@ export default function AuthPage() {
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                   <span>Please wait...</span>
                 </div>
+              ) : mode === "login" ? (
+                "Sign In"
               ) : (
-                mode === 'login' ? 'Sign In' : 'Create Account'
+                "Create Account"
               )}
             </button>
           </form>
@@ -164,7 +189,9 @@ export default function AuthPage() {
               <div className="w-full border-t border-border/30"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-4 text-muted-foreground font-medium">Or continue with</span>
+              <span className="bg-card px-4 text-muted-foreground font-medium">
+                Or continue with
+              </span>
             </div>
           </div>
 
@@ -173,7 +200,9 @@ export default function AuthPage() {
             {googleLoading ? (
               <div className="w-full h-12 flex items-center justify-center border border-border/30 rounded-xl bg-white/50">
                 <Spinner className="h-5 w-5 text-primary" />
-                <span className="ml-2 text-sm text-muted-foreground">Signing in with Google...</span>
+                <span className="ml-2 text-sm text-muted-foreground">
+                  Signing in with Google...
+                </span>
               </div>
             ) : (
               <div className="w-full [&_div]:w-full [&_div]:justify-center [&_button]:w-full [&_button]:h-12 [&_button]:rounded-xl [&_button]:shadow-elegant [&_button]:hover:shadow-glow [&_button]:transition-all [&_button]:duration-300 [&_button]:hover:scale-[1.02]">
@@ -182,7 +211,7 @@ export default function AuthPage() {
                   onError={handleGoogleError}
                   theme="outline"
                   size="large"
-                  text={mode === 'login' ? 'signin_with' : 'signup_with'}
+                  text={mode === "login" ? "signin_with" : "signup_with"}
                   shape="rectangular"
                 />
               </div>
@@ -193,12 +222,22 @@ export default function AuthPage() {
           <div className="mt-8 text-center">
             <button
               className="font-medium text-sm text-muted-foreground hover:text-primary-accent transition-colors duration-200"
-              onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+              onClick={() => setMode(mode === "login" ? "register" : "login")}
             >
-              {mode === 'login' ? (
-                <>Don't have an account? <span className="text-primary-accent font-semibold">Sign up</span></>
+              {mode === "login" ? (
+                <>
+                  Don't have an account?{" "}
+                  <span className="text-primary-accent font-semibold">
+                    Sign up
+                  </span>
+                </>
               ) : (
-                <>Already have an account? <span className="text-primary-accent font-semibold">Sign in</span></>
+                <>
+                  Already have an account?{" "}
+                  <span className="text-primary-accent font-semibold">
+                    Sign in
+                  </span>
+                </>
               )}
             </button>
           </div>

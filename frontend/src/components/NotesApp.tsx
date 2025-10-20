@@ -83,8 +83,13 @@ const NotesApp = () => {
     updateNoteOffline,
     deleteNoteOffline,
     syncOfflineNotes,
-    removeNoteFromIDB
+    removeNoteFromIDB,
+    loadMoreNotes, // 👈 NEW
+    hasMore,
+    totalCount,
+    refreshNotes, // 👈 NEW
   } = useNotes();
+
   const { preferences } = usePreferences();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -105,6 +110,26 @@ const NotesApp = () => {
   const { token, isAuthenticated, userProfile } = useAuthContext();
   const isMobile = useIsMobile();
   const [mobileView, setMobileView] = useState<"list" | "note">("list");
+
+  const NOTES_PER_PAGE = 20; // same as NOTES_LIMIT
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(totalCount / NOTES_PER_PAGE);
+
+  const handlePageChange = async (page: number) => {
+    if (page < 1 || page > totalPages) return;
+
+    const offset = (page - 1) * NOTES_PER_PAGE;
+    setCurrentPage(page);
+
+    // Fetch only that page (replace notes)
+    await refreshNotes(offset);
+
+    // Scroll back to top smoothly
+    const container = document.querySelector(".custom-scrollbar");
+    if (container) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     const initNotifications = async () => {
@@ -277,49 +302,47 @@ const NotesApp = () => {
     }
   };
 
-// --- Delete (confirmDelete) ---
-const confirmDelete = async () => {
-  if (!noteToDelete) return;
+  // --- Delete (confirmDelete) ---
+  const confirmDelete = async () => {
+    if (!noteToDelete) return;
 
-  try {
-    if (navigator.onLine && token ) {
-      // ✅ Delete from server
-      await deleteNoteApi(token, noteToDelete.id);
+    try {
+      if (navigator.onLine && token) {
+        // ✅ Delete from server
+        await deleteNoteApi(token, noteToDelete.id);
 
-      // ✅ Also remove from IndexedDB (to prevent reappearing after refresh)
-      await removeNoteFromIDB(noteToDelete.id);
-    } else {
-      // 📴 Offline delete
-      await deleteNoteOffline(noteToDelete.id);
+        // ✅ Also remove from IndexedDB (to prevent reappearing after refresh)
+        await removeNoteFromIDB(noteToDelete.id);
+      } else {
+        // 📴 Offline delete
+        await deleteNoteOffline(noteToDelete.id);
+      }
+
+      // ✅ Update UI
+      setNotes(notes.filter((note) => note.id !== noteToDelete.id));
+
+      if (selectedNote?.id === noteToDelete.id) {
+        setSelectedNote(null);
+        setIsEditing(false);
+      }
+
+      toast({
+        title: "Item deleted",
+        description: navigator.onLine
+          ? "Item removed successfully."
+          : "Deleted offline — will sync later.",
+      });
+    } catch (error: any) {
+      console.error("Error deleting item:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete item.",
+        variant: "destructive",
+      });
+    } finally {
+      setNoteToDelete(null);
     }
-
-    // ✅ Update UI
-    setNotes(notes.filter((note) => note.id !== noteToDelete.id));
-
-    if (selectedNote?.id === noteToDelete.id) {
-      setSelectedNote(null);
-      setIsEditing(false);
-    }
-
-    toast({
-      title: "Item deleted",
-      description: navigator.onLine
-        ? "Item removed successfully."
-        : "Deleted offline — will sync later.",
-    });
-  } catch (error: any) {
-    console.error("Error deleting item:", error);
-    toast({
-      title: "Error",
-      description: error.message || "Failed to delete item.",
-      variant: "destructive",
-    });
-  } finally {
-    setNoteToDelete(null);
-  }
-};
-
-
+  };
 
   const selectNote = (note: Note) => {
     setSelectedNote(note);
@@ -354,86 +377,87 @@ const confirmDelete = async () => {
     }
   };
 
- // --- Update (saveNote) ---
-const saveNote = async () => {
-  if (!selectedNote) return;
+  // --- Update (saveNote) ---
+  const saveNote = async () => {
+    if (!selectedNote) return;
 
-  try {
-    const tagsArray = editTags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter((tag) => tag.length > 0);
-    const contentToSave = selectedNote.type === "file" ? editContent : "";
-    const reminderDateValue = editReminderDate
-      ? new Date(editReminderDate).toISOString()
-      : null;
+    try {
+      const tagsArray = editTags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+      const contentToSave = selectedNote.type === "file" ? editContent : "";
+      const reminderDateValue = editReminderDate
+        ? new Date(editReminderDate).toISOString()
+        : null;
 
-    let updatedNote: Note;
+      let updatedNote: Note;
 
-    if (navigator.onLine && token && selectedNote.synced !== false) {
-      // --- ONLINE UPDATE ---
-      const updated = await updateNote(
-        token,
-        selectedNote.id,
-        editTitle.trim() ||
-          (selectedNote.type === "folder" ? "Untitled Folder" : "Untitled Note"),
-        contentToSave,
-        tagsArray,
-        selectedNote.type,
-        selectedNote.parentId,
-        reminderDateValue
-      );
+      if (navigator.onLine && token && selectedNote.synced !== false) {
+        // --- ONLINE UPDATE ---
+        const updated = await updateNote(
+          token,
+          selectedNote.id,
+          editTitle.trim() ||
+            (selectedNote.type === "folder"
+              ? "Untitled Folder"
+              : "Untitled Note"),
+          contentToSave,
+          tagsArray,
+          selectedNote.type,
+          selectedNote.parentId,
+          reminderDateValue
+        );
 
-      updatedNote = {
-        id: updated._id,
-        title: updated.title,
-        content: updated.content,
-        tags: updated.tags || [],
-        createdAt: new Date(updated.createdAt),
-        updatedAt: new Date(updated.updatedAt),
-        reminderDate: updated.reminderDate
-          ? new Date(updated.reminderDate)
-          : null,
-        notificationSent: updated.notificationSent || false,
-        type: updated.type,
-        parentId: updated.parentId || null,
-        synced: true,
-      };
-    } else {
-      // --- OFFLINE UPDATE ---
-      updatedNote = {
-        ...selectedNote,
-        title: editTitle.trim(),
-        content: contentToSave,
-        tags: tagsArray,
-        updatedAt: new Date(),
-        reminderDate: reminderDateValue ? new Date(reminderDateValue) : null,
-        synced: false,
-      };
+        updatedNote = {
+          id: updated._id,
+          title: updated.title,
+          content: updated.content,
+          tags: updated.tags || [],
+          createdAt: new Date(updated.createdAt),
+          updatedAt: new Date(updated.updatedAt),
+          reminderDate: updated.reminderDate
+            ? new Date(updated.reminderDate)
+            : null,
+          notificationSent: updated.notificationSent || false,
+          type: updated.type,
+          parentId: updated.parentId || null,
+          synced: true,
+        };
+      } else {
+        // --- OFFLINE UPDATE ---
+        updatedNote = {
+          ...selectedNote,
+          title: editTitle.trim(),
+          content: contentToSave,
+          tags: tagsArray,
+          updatedAt: new Date(),
+          reminderDate: reminderDateValue ? new Date(reminderDateValue) : null,
+          synced: false,
+        };
+      }
+
+      // Update locally (IndexedDB + Context)
+      await updateNoteOffline(updatedNote);
+
+      setSelectedNote(updatedNote);
+      setIsEditing(false);
+
+      toast({
+        title: "Item saved",
+        description: navigator.onLine
+          ? "Changes saved successfully."
+          : "Saved offline — will sync when online.",
+      });
+    } catch (error: any) {
+      console.error("Error saving item:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save changes.",
+        variant: "destructive",
+      });
     }
-
-    // Update locally (IndexedDB + Context)
-    await updateNoteOffline(updatedNote);
-
-    setSelectedNote(updatedNote);
-    setIsEditing(false);
-
-    toast({
-      title: "Item saved",
-      description: navigator.onLine
-        ? "Changes saved successfully."
-        : "Saved offline — will sync when online.",
-    });
-  } catch (error: any) {
-    console.error("Error saving item:", error);
-    toast({
-      title: "Error",
-      description: error.message || "Failed to save changes.",
-      variant: "destructive",
-    });
-  }
-};
-
+  };
 
   const cancelEditing = () => {
     setIsEditing(false);
@@ -685,6 +709,16 @@ const saveNote = async () => {
       </div>
     );
   }
+
+  useEffect(() => {
+    const savedPage = Number(localStorage.getItem("notesPage") || 1);
+    setCurrentPage(savedPage);
+    refreshNotes((savedPage - 1) * NOTES_PER_PAGE);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("notesPage", currentPage.toString());
+  }, [currentPage]);
 
   useEffect(() => {
     window.addEventListener("online", syncOfflineNotes);
@@ -955,6 +989,39 @@ const saveNote = async () => {
                     ))
                   )}
                 </div>
+              </div>
+            )}
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center mt-6 gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                >
+                  Prev
+                </Button>
+
+                {[...Array(totalPages)].map((_, index) => {
+                  const page = index + 1;
+                  return (
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? "default" : "outline"}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  );
+                })}
+
+                <Button
+                  variant="outline"
+                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                >
+                  Next
+                </Button>
               </div>
             )}
           </div>
