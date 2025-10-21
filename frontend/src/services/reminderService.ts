@@ -26,7 +26,7 @@ export class ReminderService {
 
   async checkPendingReminders(token: string): Promise<void> {
     try {
-      const response = await fetch(`${API_URL}/api/notes/reminders/pending`, {
+      const response = await fetch(`${API_URL}/notes/reminders/pending`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ export class ReminderService {
 
   async markReminderAsSent(token: string, noteId: string): Promise<void> {
     try {
-      await fetch(`${API_URL}/api/notes/reminders/${noteId}/mark-sent`, {
+      await fetch(`${API_URL}/notes/reminders/${noteId}/mark-sent`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
