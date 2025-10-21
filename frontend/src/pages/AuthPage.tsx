@@ -6,6 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
+// Define the preloading function
+// The path must match the one used in React.lazy in App.tsx
+const preloadNotesApp = () => {
+    // This starts the download in the background
+    // Since AuthPage is in /pages and NotesApp is in /components
+    import('../components/NotesApp');
+};
+
 const AuthPage: React.FC = () => {
   const { login, register, isAuthenticated } = useAuthContext();
   const { toast } = useToast();
@@ -20,6 +28,7 @@ const AuthPage: React.FC = () => {
     try {
       if (isLogin) {
         await login(email, password);
+        preloadNotesApp();
         toast({ title: 'Logged in', description: 'Welcome back!' });
       } else {
         await register(email, password);

@@ -50,7 +50,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { RichTextEditor } from "./RichTextEditor";
+//import { RichTextEditor } from "./RichTextEditor";
 import { aiService } from "../utils/aiService";
 import ProfileDrawer from "@/components/ProfileDrawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -58,6 +58,17 @@ import { Spinner } from "@/components/ui/spinner";
 import QuickThemeToggle from "@/components/QuickThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { v4 as uuidv4 } from "uuid";
+import React, { Suspense } from "react"; // Ensure Suspense is imported if not already
+// 1. Define Lazy Components
+// ✅ CORRECT (Handles the named export 'RichTextEditor')
+// This extracts the 'RichTextEditor' component and assigns it as the 'default'
+// export in the returned object, satisfying React.lazy().
+const LazyRichTextEditor = React.lazy(() =>
+  import('./RichTextEditor').then(module => ({
+    default: module.RichTextEditor,
+  }))
+);
+const LazyProfileDrawer = React.lazy(() => import('@/components/ProfileDrawer'));
 
 interface Note {
   id: string;
@@ -778,7 +789,9 @@ const NotesApp = () => {
         </div>
       </header>
 
-      <ProfileDrawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} />
+      <Suspense fallback={null}>
+    <LazyProfileDrawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} />
+</Suspense>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
@@ -1289,12 +1302,14 @@ const NotesApp = () => {
                         </Button>
                       )}
 
-                      <RichTextEditor
-                        key={`${selectedNote.id}-${aiFixTrigger}`}
-                        content={editContent}
-                        onChange={setEditContent}
-                        placeholder="Start writing your note..."
-                      />
+                      <Suspense fallback={<Spinner className="h-6 w-6 m-auto" />}>
+                <LazyRichTextEditor
+                    key={`${selectedNote.id}-${aiFixTrigger}`}
+                    content={editContent}
+                    onChange={setEditContent}
+                    placeholder="Start writing your note..."
+                />
+            </Suspense>
                     </div>
                   ) : (
                     <div className="h-full overflow-y-auto">
