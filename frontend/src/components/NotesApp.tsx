@@ -763,6 +763,7 @@ const NotesApp = () => {
                 onClick={() => setIsDrawerOpen(true)}
                 variant="ghost"
                 className="p-0 h-auto"
+                title="Profile"
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={userProfile?.picture} />
@@ -1302,9 +1303,9 @@ const NotesApp = () => {
                     <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
                       <FileText className="h-12 w-12 text-white" />
                     </div>
-                    <h3 className="text-2xl font-bold mb-2">
+                    <h2 className="text-2xl font-bold mb-2">
                       Select an item to view
-                    </h3>
+                    </h2>
                     <p className="text-muted-foreground mb-6">
                       Choose an item from the sidebar or create a new one to get
                       started.
