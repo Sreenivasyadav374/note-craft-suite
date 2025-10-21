@@ -7,12 +7,36 @@ const express_1 = __importDefault(require("express"));
 const Note_1 = __importDefault(require("../models/Note"));
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-// Get all notes (files and folders) for the authenticated user
 router.get('/', auth_1.authenticateToken, async (req, res) => {
-    // This route remains the same; it fetches all items for the user. 
-    // The frontend handles filtering by parentId.
-    const notes = await Note_1.default.find({ user: req.userId });
-    res.json(notes);
+    const userId = req.userId;
+    // 1. Get query parameters for pagination and set defaults
+    // The 'limit' dictates how many items to return per request (e.g., 20)
+    const limit = parseInt(req.query.limit) || 20;
+    // The 'offset' dictates how many items to skip (e.g., 0 for page 1, 20 for page 2)
+    const offset = parseInt(req.query.offset) || 0;
+    // 2. Define the base filter (all items belonging to the user)
+    const filter = { user: userId };
+    try {
+        // 3. Get the total count of documents matching the filter (important for frontend UI)
+        const totalCount = await Note_1.default.countDocuments(filter);
+        // 4. Fetch the notes with sorting, skipping, and limiting
+        // We sort by 'updatedAt' descending to get the most recently modified notes first
+        const notes = await Note_1.default.find(filter)
+            .sort({ updatedAt: -1 })
+            .skip(offset)
+            .limit(limit);
+        // 5. Send the paginated notes along with the total count
+        res.json({
+            notes,
+            totalCount,
+            limit,
+            offset,
+        });
+    }
+    catch (error) {
+        console.error('Error fetching paginated notes:', error);
+        res.status(500).json({ error: 'Failed to fetch notes' });
+    }
 });
 // Get a single item (file or folder)
 router.get('/:id', auth_1.authenticateToken, async (req, res) => {
