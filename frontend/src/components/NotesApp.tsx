@@ -752,6 +752,7 @@ const NotesApp = () => {
                 variant="ghost"
                 size="sm"
                 className="text-white hover:bg-white/10 px-2 py-1"
+                title="calendar"
               >
                 <Calendar className="h-4 w-4 mr-1" />
                 <span className="text-sm">Calendar</span>
@@ -766,7 +767,7 @@ const NotesApp = () => {
                 title="Profile"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={userProfile?.picture} />
+                  <AvatarImage src={userProfile?.picture} alt="Profile Picture"/>
                   <AvatarFallback>
                     <UserCircle className="h-5 w-5" />
                   </AvatarFallback>
@@ -827,6 +828,7 @@ const NotesApp = () => {
                   onClick={navigateBack}
                   className="mr-2 px-2"
                   size="sm"
+                  title="navigate back"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" /> Back
                 </Button>
@@ -854,6 +856,7 @@ const NotesApp = () => {
                 onClick={createNewNote}
                 disabled={isCreating}
                 className="flex-1 bg-gradient-primary hover:opacity-90 transition-spring"
+                title="create note"
               >
                 {isCreating ? (
                   <Spinner className="h-4 w-4 mr-1" />
@@ -867,6 +870,7 @@ const NotesApp = () => {
                 disabled={isCreating}
                 variant="outline"
                 className="flex-1 border-primary text-primary hover:bg-primary/10 transition-spring"
+                title="create folder"
               >
                 {isCreating ? (
                   <Spinner className="h-4 w-4 mr-1" />
@@ -928,6 +932,7 @@ const NotesApp = () => {
                                 setNoteToDelete(item);
                               }}
                               className="text-muted-foreground hover:text-destructive transition-smooth"
+                              title="delete note"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -999,6 +1004,7 @@ const NotesApp = () => {
                   variant="outline"
                   disabled={currentPage === 1}
                   onClick={() => handlePageChange(currentPage - 1)}
+                  title="previous page"
                 >
                   Prev
                 </Button>
@@ -1010,6 +1016,7 @@ const NotesApp = () => {
                       key={page}
                       variant={page === currentPage ? "default" : "outline"}
                       onClick={() => handlePageChange(page)}
+                      title="select page"
                     >
                       {page}
                     </Button>
@@ -1020,6 +1027,7 @@ const NotesApp = () => {
                   variant="outline"
                   disabled={currentPage === totalPages}
                   onClick={() => handlePageChange(currentPage + 1)}
+                  title="Next page"
                 >
                   Next
                 </Button>
@@ -1050,6 +1058,7 @@ const NotesApp = () => {
                     setIsEditing(false);
                     setMobileView("list");
                   }}
+                  title="Back"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" /> Back to List
                 </Button>
@@ -1085,6 +1094,7 @@ const NotesApp = () => {
                           variant="secondary"
                           disabled={isSuggesting}
                           className="text-primary hover:text-primary/80 transition-spring"
+                          title="AI suggest"
                         >
                           {isSuggesting ? (
                             <Spinner className="h-4 w-4 mr-2" />
@@ -1101,6 +1111,7 @@ const NotesApp = () => {
                             onClick={saveNote}
                             size="sm"
                             className="bg-gradient-primary hover:opacity-90"
+                            title="Save Edits"
                           >
                             <Save className="h-4 w-4 mr-2" />
                             Save
@@ -1109,6 +1120,7 @@ const NotesApp = () => {
                             onClick={cancelEditing}
                             variant="outline"
                             size="sm"
+                            title="Cancel Editing"
                           >
                             <X className="h-4 w-4 mr-2" />
                             Cancel
@@ -1119,7 +1131,7 @@ const NotesApp = () => {
                           {selectedNote.reminderDate && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" title="Export">
                                   <Calendar className="h-4 w-4 mr-2" />
                                   Export
                                 </Button>
@@ -1153,6 +1165,7 @@ const NotesApp = () => {
                             onClick={() => startEditing(selectedNote)}
                             size="sm"
                             className="bg-gradient-primary hover:opacity-90"
+                            title="Edit"
                           >
                             <Edit3 className="h-4 w-4 mr-2" />
                             Edit
@@ -1185,6 +1198,7 @@ const NotesApp = () => {
                             size="sm"
                             onClick={() => setEditReminderDate("")}
                             className="text-muted-foreground hover:text-destructive"
+                            title="Reminder date"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -1313,6 +1327,7 @@ const NotesApp = () => {
                     <Button
                       onClick={createNewNote}
                       className="bg-gradient-primary hover:opacity-90"
+                      title="New Note"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Create New Note

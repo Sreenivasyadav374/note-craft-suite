@@ -1,6 +1,8 @@
 import { notificationService } from './notificationService';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4002';
+const API_URL = process.env.NODE_ENV === 'production' 
+  ?"https://note-craft-suite-backend.vercel.app/api" // ✅ Production: Use relative path for Vercel rewrite
+  : "http://localhost:4002/api"; // ✅ Development: Use known local absolute URL
 
 export interface ReminderNote {
   _id: string;
