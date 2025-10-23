@@ -4,23 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { GoogleOAuthProvider } from '@react-oauth/google';
-
-import CalendarView from "./pages/CalendarView";
-
-import NotesApp from "./components/NotesApp";
 import { useAuthContext, AuthProvider } from "./context/AuthContext";
 import { NotesProvider } from "./context/NotesContext";
 import { PreferencesProvider } from "./context/PreferencesContext";
 import { ConnectionProvider } from "./context/ConnectionContext";
 
-import React, { Suspense } from "react"; // 👈 Import React and Suspense
+import React, { Suspense } from "react";
 
-// ❌ REMOVE DIRECT IMPORTS for large components:
-// import NotesApp from "./components/NotesApp";
-// import NotesPage from "./pages/Notes";
-// import CalendarView from "./pages/CalendarView";
-
-// 1. Define Lazy Components
 const LazyNotesApp = React.lazy(() => import("./components/NotesApp"));
 const LazyNotesPage = React.lazy(() => import("./pages/Notes"));
 const LazyCalendarView = React.lazy(() => import("./pages/CalendarView"));
@@ -32,11 +22,7 @@ import ProtectedExample from "./pages/ProtectedExample";
 import Index from "./pages/Index";
 
 // ... (Context imports and GOOGLE_CLIENT_ID remain the same)
-// ... (queryClient and RequireAuth function remain the same)
 
-// ...
-
-// Replace with your actual Google Client ID
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const queryClient = new QueryClient();
