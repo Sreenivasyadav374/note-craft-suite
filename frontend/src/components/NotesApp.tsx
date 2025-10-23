@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-const { aiService } = await import("../utils/aiService");
+import { aiService } from "../utils/aiService";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { v4 as uuidv4 } from "uuid";
 import React, { Suspense } from "react";
@@ -32,9 +32,7 @@ import AppHeader from "@/components/AppHeader";
 import MainNoteContent from "./MainNoteContent";
 import NoteList from "./NoteList";
 
-const LazyProfileDrawer = React.lazy(
-  () => import("@/components/ProfileDrawer")
-);
+const LazyProfileDrawer = React.lazy(() => import('./ProfileDrawer'));
 
 interface Note {
   id: string;
@@ -750,11 +748,10 @@ const handleItemDeleteClick = useCallback(
     ]
   );
 
-  const handleMobileBack = useCallback(() => {
-    setSelectedNote(null);
-    setIsEditing(false);
+// ✅ NEW (Stable reference using useCallback):
+const handleMobileBack = useCallback(() => {
     setMobileView("list");
-  }, [setSelectedNote, setIsEditing, setMobileView]);
+}, [setMobileView]); // The dependency (setMobileView) is a stable state setter
 
   const memoizedExportToCalendar = useCallback(
     (provider) => {
