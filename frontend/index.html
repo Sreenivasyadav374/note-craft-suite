@@ -5,37 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NoteCraft Suite</title>
   <meta name="description" content="Your intelligent note and task management suite." />
-  <meta name="author" content="Your Name" />
-  
-  <!-- Favicon -->
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
-  
-  <!-- Preconnect & preload Google Fonts -->
+  <meta name="author" content="Sreenivas Yadav" />
+
+  <!-- ✅ Favicon -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+
+  <!-- ✅ Preconnects -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap" as="style" onload="this.rel='stylesheet'" />
+  <link rel="preconnect" href="https://note-craft-suite-backend.vercel.app" />
+
+  <!-- ✅ Preload critical font CSS (as style, non-blocking) -->
+  <link
+    rel="preload"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap"
+    as="style"
+    onload="this.rel='stylesheet'"
+  />
   <noscript>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
   </noscript>
-  
-  <!-- Preload and defer main CSS -->
+
+  <!-- ✅ Inline small critical CSS (optional placeholder to show background quickly) -->
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background-color: #0a0a0a;
+      color: #fafafa;
+      font-family: 'Inter', sans-serif;
+    }
+    #root {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-weight: 500;
+      font-size: 1rem;
+    }
+  </style>
+
+  <!-- ✅ Preload and defer main CSS -->
   <link rel="preload" href="/assets/index-D3sjjVV_.css" as="style" onload="this.rel='stylesheet'" />
   <noscript><link href="/assets/index-D3sjjVV_.css" rel="stylesheet" /></noscript>
 
-  <!-- Open Graph and Twitter Cards Meta -->
+  <!-- ✅ SEO / Social -->
   <meta property="og:title" content="NoteCraft Suite" />
   <meta property="og:description" content="Your intelligent note and task management suite." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="og-image.png" />
-  
+  <meta property="og:image" content="/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@yourhandle" />
-  <meta name="twitter:image" content="og-image.png" />
+  <meta name="twitter:site" content="@noteCraftSuite" />
+  <meta name="twitter:image" content="/og-image.png" />
+
+  <!-- ✅ Preload your main bundle early -->
+  <link rel="modulepreload" href="/src/main.tsx" />
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.10.36/build/spline-viewer.js"></script>
-  </body>
+
+<body>
+  <!-- ✅ Render quick splash while React loads -->
+  <div id="root">
+    Loading NoteCraft Suite...
+  </div>
+
+  <!-- ✅ Defer main script -->
+  <script type="module" src="/src/main.tsx" defer></script>
+
+  <!-- ✅ Lazy-init analytics or heavy scripts (optional future slot) -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=GA_ID"></script> -->
+</body>
 </html>

@@ -6,20 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/ui/spinner";
 import "@/styles/auth.css"; // Assuming you have a CSS file for styles
 
-// // Dynamically load the Spline viewer script only once
-// function useSplineScript() {
-//   useEffect(() => {
-//     if (!document.querySelector('script[data-spline-viewer]')) {
-//       const script = document.createElement('script');
-//       script.type = 'module';
-//       script.src = 'https://unpkg.com/@splinetool/viewer@1.10.36/build/spline-viewer.js';
-//       script.setAttribute('data-spline-viewer', 'true');
-//       document.body.appendChild(script);
-//     }
-//   }, []);
-// }
-
-//   useSplineScript();
 export default function AuthPage() {
   const { register, login, googleLogin, error, loading, isAuthenticated } =
     useAuthContext();
@@ -27,8 +13,6 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState<"login" | "register">("login");
   const [googleLoading, setGoogleLoading] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
   const { toast } = useToast();
 
   if (isAuthenticated) {
@@ -39,7 +23,6 @@ export default function AuthPage() {
     e.preventDefault();
     if (mode === "login") {
       await login(username, password);
-      //navigate('/notes', { replace: true });
     } else {
       await register(username, password);
     }

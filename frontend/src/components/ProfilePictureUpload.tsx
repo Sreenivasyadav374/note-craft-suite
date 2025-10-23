@@ -115,7 +115,7 @@ export default function ProfilePictureUpload({
       <div className="flex flex-col items-center gap-4">
         <div className="relative group">
           <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-lg">
-            <AvatarImage src={displayImage} alt={username} />
+            <AvatarImage loading="lazy" src={displayImage} alt={username} />
             <AvatarFallback className="bg-gradient-primary text-primary-foreground text-3xl font-bold">
               {userInitials}
             </AvatarFallback>
