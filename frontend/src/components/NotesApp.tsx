@@ -27,11 +27,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { v4 as uuidv4 } from "uuid";
 import React, { Suspense } from "react";
 import SidebarControls from "@/components/SidebarControls";
-import NoteListItem from "@/components/NoteListItem";
 import PaginationControls from "@/components/PaginationControls";
-import CreateNoteCard from "./CreateNoteCard";
 import AppHeader from "@/components/AppHeader";
 import MainNoteContent from "./MainNoteContent";
+import NoteList from "./NoteList";
 
 const LazyProfileDrawer = React.lazy(
   () => import("@/components/ProfileDrawer")
@@ -305,11 +304,6 @@ const NotesApp = () => {
     }
   };
 
-  const selectNote = useCallback((note: Note) => {
-    setSelectedNote(note);
-    setIsEditing(false);
-  }, []);
-
   const startEditing = (note: Note) => {
     setSelectedNote(note);
     setIsEditing(true);
@@ -352,14 +346,14 @@ const NotesApp = () => {
     }
   };
 
-  const openFolder = (folderId: string) => {
+const openFolder = useCallback((folderId: string) => {
     setActiveFolderId(folderId);
     setSelectedNote(null);
     setIsEditing(false);
     setSearchTerm("");
-  };
+}, [setActiveFolderId, setSelectedNote, setIsEditing, setSearchTerm]); // Dependencies are all stable state setters
 
-  const navigateBack = () => {
+const navigateBack = useCallback(() => {
     if (activeFolderId === null) return;
 
     const currentFolder = notes.find(
@@ -370,7 +364,14 @@ const NotesApp = () => {
     setSelectedNote(null);
     setIsEditing(false);
     setSearchTerm("");
-  };
+}, [
+    activeFolderId,
+    notes, // dependency from NotesContext
+    setActiveFolderId, 
+    setSelectedNote, 
+    setIsEditing, 
+    setSearchTerm
+]);
 
   const fixContentWithAI = async () => {
     if (!token || !selectedNote || selectedNote.type === "folder") return;
@@ -424,7 +425,7 @@ const NotesApp = () => {
     }
   };
 
-  const visibleItems = useMemo(() => {
+  const currentNotes = useMemo(() => {
     let items = notes.filter((note) => note.parentId === activeFolderId);
 
     if (searchTerm) {
@@ -455,7 +456,7 @@ const NotesApp = () => {
       }
     });
     return items;
-  }, [notes, activeFolderId, searchTerm, preferences.defaultSortOrder]);
+}, [notes, searchTerm, activeFolderId, preferences.defaultSortOrder, /* etc. */]);
 
   const handlePageChange = useCallback(
     (page: number) => {
@@ -468,24 +469,45 @@ const NotesApp = () => {
     [totalPages, setCurrentPage, refreshNotes]
   );
 
-  const handleItemSelect = useCallback(
-    (item: Note) => {
+
+const memoizedHandleNoteSelect = useCallback((note) => {
+    setSelectedNote(note);
+    setIsEditing(false);
+    setMobileView("note");
+    setEditTitle(note.title);
+    setEditContent(note.content);
+    setEditTags(note.tags.join(", "));
+    setEditReminderDate(
+      note.reminderDate
+        ? new Date(note.reminderDate).toISOString().slice(0, 16)
+        : ""
+    );
+}, [
+    setSelectedNote, setIsEditing, setMobileView, setEditTitle, 
+    setEditContent, setEditTags, setEditReminderDate
+]);
+
+const handleItemSelect = useCallback(
+    (item: Note ) => { // Use the combined Note | Folder type
       if (item.type === "folder") {
-        openFolder(item.id); // Assuming openFolder is memoized
+        openFolder(item.id); 
       } else {
-        selectNote(item); // Assuming selectNote is memoized
+        // 💥 CORRECTED: Call the memoized note handler directly
+        memoizedHandleNoteSelect(item); 
       }
     },
-    [openFolder, selectNote]
-  );
+    // 💥 CORRECTED DEPENDENCIES: 
+    // It now depends only on openFolder and the memoized note handler.
+    [openFolder, memoizedHandleNoteSelect] 
+);
 
-  const handleItemDeleteClick = useCallback(
+const handleItemDeleteClick = useCallback(
     (e: React.MouseEvent, item: Note) => {
       e.stopPropagation();
       setNoteToDelete(item);
     },
     [setNoteToDelete]
-  );
+);
 
   const memoizedSaveNote = useCallback(async () => {
     if (!selectedNote) return;
@@ -728,12 +750,11 @@ const NotesApp = () => {
     ]
   );
 
-  // 6. Fix handleMobileBack dependencies (This one looks mostly correct, but confirm the dependencies)
   const handleMobileBack = useCallback(() => {
     setSelectedNote(null);
     setIsEditing(false);
     setMobileView("list");
-  }, [setSelectedNote, setIsEditing, setMobileView]); // These are setters, so this is stable. KEEP THIS ONE AS IS.
+  }, [setSelectedNote, setIsEditing, setMobileView]);
 
   const memoizedExportToCalendar = useCallback(
     (provider) => {
@@ -786,7 +807,6 @@ const NotesApp = () => {
     ]
   );
 
-  // 6. Memoize `createNewNote` (used in the Empty State)
   
   const memoizedCreateNewNote = useCallback(createNewNote, [
     isCreating,
@@ -805,7 +825,6 @@ const NotesApp = () => {
     token, activeFolderId, setSelectedNote, setIsEditing, toast
   ]);
 
-  const memoizedNavigateBack = useCallback(navigateBack, [navigateBack]);
 
   const navigateToCalendar = useCallback(() => {
     navigate("/calendar");
@@ -902,7 +921,7 @@ const NotesApp = () => {
             <SidebarControls
               activeFolderId={activeFolderId}
               notes={notes}
-              navigateBack={memoizedNavigateBack}
+              navigateBack={navigateBack}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm} // setSearchTerm is safe to pass directly
               createNewNote={memoizedCreateNewNote}
@@ -913,26 +932,13 @@ const NotesApp = () => {
 
             {/* The List View and Container */}
             {!notesLoading && (
-              <div className="flex-1 flex flex-col premium-sidebar rounded-2xl border-2 border-primary/30 bg-gradient-card shadow-3d overflow-hidden min-h-[400px] max-h-[calc(100vh-220px)]">
-                <div className="flex-1 overflow-y-auto px-1 py-2 space-y-4 custom-scrollbar">
-                  {visibleItems.length === 0 ? (
-                    <CreateNoteCard notesLength={notes.length} />
-                  ) : (
-                    // 🌟 Note List Mapping (using the memoized item) 🌟
-                    visibleItems.map((item) => (
-                      <NoteListItem
-                        key={item.id}
-                        item={item}
-                        isSelected={
-                          selectedNote?.id === item.id && item.type === "file"
-                        }
-                        onSelect={handleItemSelect}
-                        onDeleteClick={handleItemDeleteClick}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
+              <NoteList
+                currentNotes={currentNotes}
+                notesLength={notes.length}
+                selectedNoteId={selectedNote?.id || null}
+                handleItemSelect={handleItemSelect}
+                handleItemDeleteClick={handleItemDeleteClick}
+              />
             )}
 
             {/* Pagination Controls */}
