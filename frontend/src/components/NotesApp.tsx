@@ -29,8 +29,9 @@ import React, { Suspense } from "react";
 import SidebarControls from "@/components/SidebarControls";
 import PaginationControls from "@/components/PaginationControls";
 import AppHeader from "@/components/AppHeader";
-import MainNoteContent from "./MainNoteContent";
+const LazyMainNoteContent = React.lazy(() => import("./MainNoteContent"));
 import NoteList from "./NoteList";
+import SelectNoteCard from "./SelectNoteCard";
 
 const LazyProfileDrawer = React.lazy(() => import('./ProfileDrawer'));
 
@@ -966,34 +967,47 @@ const handleMobileBack = useCallback(() => {
                 : "block")
             }
           >
-            {/* Main Content - Note Editor */}
-            <MainNoteContent
-              isMobile={isMobile}
-              mobileView={mobileView}
-              handleMobileBack={handleMobileBack} // Memoized handler
-              createNewNote={memoizedCreateNewNote} // Memoized handler
-              // Editor State Props
-              selectedNote={memoizedSelectedNote}
-              isEditing={isEditing}
-              editTitle={editTitle}
-              setEditTitle={setEditTitle}
-              editTags={editTags}
-              setEditTags={setEditTags}
-              editReminderDate={editReminderDate}
-              setEditReminderDate={setEditReminderDate}
-              isSuggesting={isSuggesting}
-              isFixingContent={isFixingContent}
-              editContent={editContent}
-              setEditContent={setEditContent}
-              aiFixTrigger={aiFixTrigger}
-              // Memoized Editor Handlers
-              memoizedHandleAISuggestion={memoizedHandleAISuggestion}
-              memoizedSaveNote={memoizedSaveNote}
-              memoizedCancelEditing={memoizedCancelEditing}
-              memoizedStartEditing={memoizedStartEditing}
-              memoizedExportToCalendar={memoizedExportToCalendar}
-              memoizedFixContentWithAI={memoizedFixContentWithAI}
-            />
+            <React.Suspense fallback={
+    // Placeholder while the editor chunk is loading
+    <div className="flex items-center justify-center h-full">
+      Loading Editor...
+    </div>
+  }>
+    {/* 💥 NEW: Conditionally render the Lazy component only if a note is selected */}
+    {memoizedSelectedNote ? (
+      <LazyMainNoteContent
+        isMobile={isMobile}
+        mobileView={mobileView}
+        handleMobileBack={handleMobileBack} 
+        createNewNote={memoizedCreateNewNote} 
+        // Editor State Props
+        selectedNote={memoizedSelectedNote}
+        isEditing={isEditing}
+        editTitle={editTitle}
+        setEditTitle={setEditTitle}
+        editTags={editTags}
+        setEditTags={setEditTags}
+        editReminderDate={editReminderDate}
+        setEditReminderDate={setEditReminderDate}
+        isSuggesting={isSuggesting}
+        isFixingContent={isFixingContent}
+        editContent={editContent}
+        setEditContent={setEditContent}
+        aiFixTrigger={aiFixTrigger}
+        // Memoized Editor Handlers
+        memoizedHandleAISuggestion={memoizedHandleAISuggestion}
+        memoizedSaveNote={memoizedSaveNote}
+        memoizedCancelEditing={memoizedCancelEditing}
+        memoizedStartEditing={memoizedStartEditing}
+        memoizedExportToCalendar={memoizedExportToCalendar}
+        memoizedFixContentWithAI={memoizedFixContentWithAI}
+      />
+    ) : isMobile ? null : (
+        <SelectNoteCard 
+        createNewNote={memoizedCreateNewNote} 
+      />
+    )}
+  </React.Suspense>
           </div>
         </div>
       </div>

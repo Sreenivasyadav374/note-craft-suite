@@ -103,7 +103,7 @@ const MainNoteContent: React.FC<MainNoteContentProps> = React.memo(({
         </div>
       )}
 
-      {selectedNote ? (
+
         <Card className="shadow-elegant border-2 border-primary/30 bg-gradient-card h-full rounded-2xl flex flex-col overflow-hidden">
           {/* Editor Header */}
           <NoteEditorHeader
@@ -135,33 +135,7 @@ const MainNoteContent: React.FC<MainNoteContentProps> = React.memo(({
             aiFixTrigger={aiFixTrigger}
           />
         </Card>
-      ) : isMobile ? null : (
-        /* Empty State */
-        <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)]">
-          <CardContent className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                <FileText className="h-12 w-12 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">
-                Select an item to view
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                Choose an item from the sidebar or create a new one to get
-                started.
-              </p>
-              <Button
-                onClick={createNewNote} // Stable prop
-                className="bg-gradient-primary hover:opacity-90"
-                title="New Note"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Note
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      
     </div>
   );
 });
