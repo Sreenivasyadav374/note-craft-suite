@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuthContext } from "../context/AuthContext";
 import { decodeJWT } from "../lib/jwt";
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { useToast } from "@/hooks/use-toast";
 import ProfilePictureUpload from "./ProfilePictureUpload";
 import UsageStats from "./UsageStats";
@@ -23,8 +23,19 @@ interface ProfileDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps) {
-  const { token, logout, isAuthenticated, googleLogin, userProfile, loading, updateProfilePicture } = useAuthContext();
+export default function ProfileDrawer({
+  open,
+  onOpenChange,
+}: ProfileDrawerProps) {
+  const {
+    token,
+    logout,
+    isAuthenticated,
+    googleLogin,
+    userProfile,
+    loading,
+    updateProfilePicture,
+  } = useAuthContext();
   const { toast } = useToast();
 
   const payload = token ? decodeJWT(token) : null;
@@ -37,7 +48,9 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
     updateProfilePicture(imageUrl);
   };
 
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+  const handleGoogleSuccess = async (
+    credentialResponse: CredentialResponse
+  ) => {
     if (credentialResponse.credential) {
       const res = await googleLogin(credentialResponse.credential);
       if (res.token) {
@@ -129,7 +142,9 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
                   {username}
                 </h3>
                 {userEmail && (
-                  <p className="text-sm text-muted-foreground mb-3">{userEmail}</p>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {userEmail}
+                  </p>
                 )}
                 <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 shadow-sm">
                   <Crown className="h-3 w-3 mr-1" />
@@ -148,7 +163,7 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
                 <TabsTrigger value="settings">Settings</TabsTrigger>
                 <TabsTrigger value="linked">Accounts</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="overview" className="space-y-5 mt-0">
                 <UsageStats />
 
@@ -217,7 +232,11 @@ export default function ProfileDrawer({ open, onOpenChange }: ProfileDrawerProps
 
         <div className="pt-5 mt-5 border-t border-border/50">
           <p className="text-xs text-muted-foreground text-center">
-            Member since {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            Member since{" "}
+            {new Date().toLocaleDateString("en-US", {
+              month: "long",
+              year: "numeric",
+            })}
           </p>
         </div>
       </SheetContent>

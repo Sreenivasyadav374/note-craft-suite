@@ -2,8 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useAuthContext, AuthProvider } from "./context/AuthContext";
 import { NotesProvider } from "./context/NotesContext";
 import { PreferencesProvider } from "./context/PreferencesContext";
@@ -45,39 +51,63 @@ const App = () => {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
         <ConnectionProvider>
-        <PreferencesProvider>
-          <NotesProvider>
-            <QueryClientProvider client={queryClient}>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  {/* 2. Wrap Routes in Suspense for loading state */}
-                  <Suspense
-                    fallback={
-                      <div className="flex justify-center items-center h-screen text-lg">
-                        Loading Application...
-                      </div>
-                    }
-                  >
-                    <Routes>
-                      <Route path="/login" element={<AuthPage />} />
-                      <Route path="/register" element={<AuthPage />} />
-                      
-                      {/* Use Lazy components for the main routes */}
-                      <Route path="/notes" element={<RequireAuth><LazyNotesApp /></RequireAuth>} />
-                      <Route path="/calendar" element={<RequireAuth><LazyCalendarView /></RequireAuth>} />
-                      <Route path="/" element={<RequireAuth><LazyNotesPage /></RequireAuth>} />
-                      
-                      <Route path="/protected" element={<ProtectedExample />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Suspense>
-                </BrowserRouter>
-              </TooltipProvider>
-            </QueryClientProvider>
-          </NotesProvider>
-        </PreferencesProvider>
+          <PreferencesProvider>
+            <NotesProvider>
+              <QueryClientProvider client={queryClient}>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    {/* 2. Wrap Routes in Suspense for loading state */}
+                    <Suspense
+                      fallback={
+                        <div className="flex justify-center items-center h-screen text-lg">
+                          Loading Application...
+                        </div>
+                      }
+                    >
+                      <Routes>
+                        <Route path="/login" element={<AuthPage />} />
+                        <Route path="/register" element={<AuthPage />} />
+
+                        {/* Use Lazy components for the main routes */}
+                        <Route
+                          path="/notes"
+                          element={
+                            <RequireAuth>
+                              <LazyNotesApp />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/calendar"
+                          element={
+                            <RequireAuth>
+                              <LazyCalendarView />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/"
+                          element={
+                            <RequireAuth>
+                              <LazyNotesPage />
+                            </RequireAuth>
+                          }
+                        />
+
+                        <Route
+                          path="/protected"
+                          element={<ProtectedExample />}
+                        />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </BrowserRouter>
+                </TooltipProvider>
+              </QueryClientProvider>
+            </NotesProvider>
+          </PreferencesProvider>
         </ConnectionProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
@@ -85,4 +115,3 @@ const App = () => {
 };
 
 export default App;
-

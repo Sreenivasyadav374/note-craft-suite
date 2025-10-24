@@ -1,25 +1,25 @@
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuthContext } from '../context/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuthContext } from "../context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 // Define the preloading function
 // The path must match the one used in React.lazy in App.tsx
 const preloadNotesApp = () => {
-    // This starts the download in the background
-    // Since AuthPage is in /pages and NotesApp is in /components
-    import('../components/NotesApp');
+  // This starts the download in the background
+  // Since AuthPage is in /pages and NotesApp is in /components
+  import("../components/NotesApp");
 };
 
 const AuthPage: React.FC = () => {
   const { login, register, isAuthenticated } = useAuthContext();
   const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,14 +29,18 @@ const AuthPage: React.FC = () => {
       if (isLogin) {
         await login(email, password);
         preloadNotesApp();
-        toast({ title: 'Logged in', description: 'Welcome back!' });
+        toast({ title: "Logged in", description: "Welcome back!" });
       } else {
         await register(email, password);
-        toast({ title: 'Account created', description: 'You can now log in.' });
+        toast({ title: "Account created", description: "You can now log in." });
         setIsLogin(true);
       }
     } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Authentication failed', variant: 'destructive' });
+      toast({
+        title: "Error",
+        description: err.message || "Authentication failed",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -51,7 +55,7 @@ const AuthPage: React.FC = () => {
         <Card className="w-full shadow-elegant">
           <CardHeader>
             <CardTitle className="text-2xl text-center">
-              {isLogin ? 'Login to NoteCraft' : 'Register for NoteCraft'}
+              {isLogin ? "Login to NoteCraft" : "Register for NoteCraft"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -60,7 +64,7 @@ const AuthPage: React.FC = () => {
                 type="email"
                 placeholder="Email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 autoFocus
               />
@@ -68,11 +72,15 @@ const AuthPage: React.FC = () => {
                 type="password"
                 placeholder="Password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
-                {loading ? 'Please wait...' : isLogin ? 'Login' : 'Register'}
+              <Button
+                type="submit"
+                className="w-full bg-gradient-primary"
+                disabled={loading}
+              >
+                {loading ? "Please wait..." : isLogin ? "Login" : "Register"}
               </Button>
             </form>
             <div className="mt-4 text-center">
@@ -81,7 +89,9 @@ const AuthPage: React.FC = () => {
                 className="text-primary underline text-sm"
                 onClick={() => setIsLogin(!isLogin)}
               >
-                {isLogin ? "Don't have an account? Register" : 'Already have an account? Login'}
+                {isLogin
+                  ? "Don't have an account? Register"
+                  : "Already have an account? Login"}
               </button>
             </div>
           </CardContent>

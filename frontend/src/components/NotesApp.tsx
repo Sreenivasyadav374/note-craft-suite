@@ -33,7 +33,7 @@ const LazyMainNoteContent = React.lazy(() => import("./MainNoteContent"));
 import NoteList from "./NoteList";
 import SelectNoteCard from "./SelectNoteCard";
 
-const LazyProfileDrawer = React.lazy(() => import('./ProfileDrawer'));
+const LazyProfileDrawer = React.lazy(() => import("./ProfileDrawer"));
 
 interface Note {
   id: string;
@@ -91,9 +91,10 @@ const NotesApp = () => {
 
   const [folderHistory, setFolderHistory] = useState<string[]>([]);
 
-// Derive the activeFolderId from the history stack.
-// If the stack is empty, we are in the root (parentId is null).
-const activeFolderId = folderHistory.length > 0 ? folderHistory[folderHistory.length - 1] : null;
+  // Derive the activeFolderId from the history stack.
+  // If the stack is empty, we are in the root (parentId is null).
+  const activeFolderId =
+    folderHistory.length > 0 ? folderHistory[folderHistory.length - 1] : null;
 
   useEffect(() => {
     const initNotifications = async () => {
@@ -350,31 +351,43 @@ const activeFolderId = folderHistory.length > 0 ? folderHistory[folderHistory.le
     }
   };
 
-const openFolder = useCallback((folderId: string) => {
-    // Only push if we are not already in that folder
-    if (folderId !== activeFolderId) {
+  const openFolder = useCallback(
+    (folderId: string) => {
+      // Only push if we are not already in that folder
+      if (folderId !== activeFolderId) {
         setFolderHistory((prev) => [...prev, folderId]);
-        setSearchTerm("");      // Clear search state on navigation
-        setSelectedNote(null);  // Deselect any currently selected item
-    }
-    // Set mobile view to list (if applicable)
-    // setMobileView("list"); 
-}, [activeFolderId, setSearchTerm, setSelectedNote /* add other state setters */]);
+        setSearchTerm(""); // Clear search state on navigation
+        setSelectedNote(null); // Deselect any currently selected item
+      }
+      // Set mobile view to list (if applicable)
+      // setMobileView("list");
+    },
+    [
+      activeFolderId,
+      setSearchTerm,
+      setSelectedNote /* add other state setters */,
+    ]
+  );
 
-const navigateBack = useCallback(() => {
+  const navigateBack = useCallback(() => {
     if (folderHistory.length > 0) {
-        // 💥 CRITICAL: Remove the last item from the history stack
-        setFolderHistory((prev) => prev.slice(0, -1)); 
-        
-        // Reset states
-        setSearchTerm("");
-        setSelectedNote(null);
-        setIsEditing(false);
+      // 💥 CRITICAL: Remove the last item from the history stack
+      setFolderHistory((prev) => prev.slice(0, -1));
+
+      // Reset states
+      setSearchTerm("");
+      setSelectedNote(null);
+      setIsEditing(false);
     }
     // setMobileView("list");
-}, [folderHistory.length, setSearchTerm, setSelectedNote, setIsEditing /* add other state setters */]);
+  }, [
+    folderHistory.length,
+    setSearchTerm,
+    setSelectedNote,
+    setIsEditing /* add other state setters */,
+  ]);
 
-// You must pass this 'navigateBack' handler to the SidebarControls component.
+  // You must pass this 'navigateBack' handler to the SidebarControls component.
 
   const fixContentWithAI = async () => {
     if (!token || !selectedNote || selectedNote.type === "folder") return;
@@ -428,11 +441,11 @@ const navigateBack = useCallback(() => {
     }
   };
 
-const currentNotes = useMemo(() => {
+  const currentNotes = useMemo(() => {
     // 'notes' is the full array of all notes and folders from your context
     let itemsToDisplay = notes.filter(
-        // 💥 CRITICAL: Filter notes/folders whose parentId matches the current activeFolderId.
-        (item) => item.parentId === activeFolderId
+      // 💥 CRITICAL: Filter notes/folders whose parentId matches the current activeFolderId.
+      (item) => item.parentId === activeFolderId
     );
 
     if (searchTerm) {
@@ -464,7 +477,11 @@ const currentNotes = useMemo(() => {
     });
 
     return itemsToDisplay;
-}, [notes, activeFolderId, searchTerm /* add other dependencies like sorting state */]);
+  }, [
+    notes,
+    activeFolderId,
+    searchTerm /* add other dependencies like sorting state */,
+  ]);
 
   const handlePageChange = useCallback(
     (page: number) => {
@@ -477,45 +494,53 @@ const currentNotes = useMemo(() => {
     [totalPages, setCurrentPage, refreshNotes]
   );
 
+  const memoizedHandleNoteSelect = useCallback(
+    (note) => {
+      setSelectedNote(note);
+      setIsEditing(false);
+      setMobileView("note");
+      setEditTitle(note.title);
+      setEditContent(note.content);
+      setEditTags(note.tags.join(", "));
+      setEditReminderDate(
+        note.reminderDate
+          ? new Date(note.reminderDate).toISOString().slice(0, 16)
+          : ""
+      );
+    },
+    [
+      setSelectedNote,
+      setIsEditing,
+      setMobileView,
+      setEditTitle,
+      setEditContent,
+      setEditTags,
+      setEditReminderDate,
+    ]
+  );
 
-const memoizedHandleNoteSelect = useCallback((note) => {
-    setSelectedNote(note);
-    setIsEditing(false);
-    setMobileView("note");
-    setEditTitle(note.title);
-    setEditContent(note.content);
-    setEditTags(note.tags.join(", "));
-    setEditReminderDate(
-      note.reminderDate
-        ? new Date(note.reminderDate).toISOString().slice(0, 16)
-        : ""
-    );
-}, [
-    setSelectedNote, setIsEditing, setMobileView, setEditTitle, 
-    setEditContent, setEditTags, setEditReminderDate
-]);
-
-const handleItemSelect = useCallback(
-    (item: Note ) => { // Use the combined Note | Folder type
+  const handleItemSelect = useCallback(
+    (item: Note) => {
+      // Use the combined Note | Folder type
       if (item.type === "folder") {
-        openFolder(item.id); 
+        openFolder(item.id);
       } else {
         // 💥 CORRECTED: Call the memoized note handler directly
-        memoizedHandleNoteSelect(item); 
+        memoizedHandleNoteSelect(item);
       }
     },
-    // 💥 CORRECTED DEPENDENCIES: 
+    // 💥 CORRECTED DEPENDENCIES:
     // It now depends only on openFolder and the memoized note handler.
-    [openFolder, memoizedHandleNoteSelect] 
-);
+    [openFolder, memoizedHandleNoteSelect]
+  );
 
-const handleItemDeleteClick = useCallback(
+  const handleItemDeleteClick = useCallback(
     (e: React.MouseEvent, item: Note) => {
       e.stopPropagation();
       setNoteToDelete(item);
     },
     [setNoteToDelete]
-);
+  );
 
   const memoizedSaveNote = useCallback(async () => {
     if (!selectedNote) return;
@@ -720,7 +745,6 @@ const handleItemDeleteClick = useCallback(
     toast,
   ]);
 
-
   const memoizedStartEditing = useCallback(
     (note) => {
       setSelectedNote(note);
@@ -758,10 +782,10 @@ const handleItemDeleteClick = useCallback(
     ]
   );
 
-// ✅ NEW (Stable reference using useCallback):
-const handleMobileBack = useCallback(() => {
+  // ✅ NEW (Stable reference using useCallback):
+  const handleMobileBack = useCallback(() => {
     setMobileView("list");
-}, [setMobileView]); // The dependency (setMobileView) is a stable state setter
+  }, [setMobileView]); // The dependency (setMobileView) is a stable state setter
 
   const memoizedExportToCalendar = useCallback(
     (provider) => {
@@ -814,7 +838,6 @@ const handleMobileBack = useCallback(() => {
     ]
   );
 
-  
   const memoizedCreateNewNote = useCallback(createNewNote, [
     isCreating,
     token,
@@ -829,9 +852,12 @@ const handleMobileBack = useCallback(() => {
     toast,
   ]);
   const memoizedCreateNewFolder = useCallback(createNewFolder, [
-    token, activeFolderId, setSelectedNote, setIsEditing, toast
+    token,
+    activeFolderId,
+    setSelectedNote,
+    setIsEditing,
+    toast,
   ]);
-
 
   const navigateToCalendar = useCallback(() => {
     navigate("/calendar");
@@ -882,7 +908,13 @@ const handleMobileBack = useCallback(() => {
       />
 
       <Suspense fallback={null}>
-        <LazyProfileDrawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} />
+        {/* 💡 CRITICAL CHANGE: Only render the Lazy component when the drawer is open */}
+        {isDrawerOpen && (
+          <LazyProfileDrawer
+            open={isDrawerOpen}
+            onOpenChange={setIsDrawerOpen}
+          />
+        )}
       </Suspense>
 
       {/* Delete Confirmation Dialog */}
@@ -967,47 +999,47 @@ const handleMobileBack = useCallback(() => {
                 : "block")
             }
           >
-            <React.Suspense fallback={
-    // Placeholder while the editor chunk is loading
-    <div className="flex items-center justify-center h-full">
-      Loading Editor...
-    </div>
-  }>
-    {/* 💥 NEW: Conditionally render the Lazy component only if a note is selected */}
-    {memoizedSelectedNote ? (
-      <LazyMainNoteContent
-        isMobile={isMobile}
-        mobileView={mobileView}
-        handleMobileBack={handleMobileBack} 
-        createNewNote={memoizedCreateNewNote} 
-        // Editor State Props
-        selectedNote={memoizedSelectedNote}
-        isEditing={isEditing}
-        editTitle={editTitle}
-        setEditTitle={setEditTitle}
-        editTags={editTags}
-        setEditTags={setEditTags}
-        editReminderDate={editReminderDate}
-        setEditReminderDate={setEditReminderDate}
-        isSuggesting={isSuggesting}
-        isFixingContent={isFixingContent}
-        editContent={editContent}
-        setEditContent={setEditContent}
-        aiFixTrigger={aiFixTrigger}
-        // Memoized Editor Handlers
-        memoizedHandleAISuggestion={memoizedHandleAISuggestion}
-        memoizedSaveNote={memoizedSaveNote}
-        memoizedCancelEditing={memoizedCancelEditing}
-        memoizedStartEditing={memoizedStartEditing}
-        memoizedExportToCalendar={memoizedExportToCalendar}
-        memoizedFixContentWithAI={memoizedFixContentWithAI}
-      />
-    ) : isMobile ? null : (
-        <SelectNoteCard 
-        createNewNote={memoizedCreateNewNote} 
-      />
-    )}
-  </React.Suspense>
+            <React.Suspense
+              fallback={
+                // Placeholder while the editor chunk is loading
+                <div className="flex items-center justify-center h-full">
+                  Loading Editor...
+                </div>
+              }
+            >
+              {/* 💥 NEW: Conditionally render the Lazy component only if a note is selected */}
+              {memoizedSelectedNote ? (
+                <LazyMainNoteContent
+                  isMobile={isMobile}
+                  mobileView={mobileView}
+                  handleMobileBack={handleMobileBack}
+                  createNewNote={memoizedCreateNewNote}
+                  // Editor State Props
+                  selectedNote={memoizedSelectedNote}
+                  isEditing={isEditing}
+                  editTitle={editTitle}
+                  setEditTitle={setEditTitle}
+                  editTags={editTags}
+                  setEditTags={setEditTags}
+                  editReminderDate={editReminderDate}
+                  setEditReminderDate={setEditReminderDate}
+                  isSuggesting={isSuggesting}
+                  isFixingContent={isFixingContent}
+                  editContent={editContent}
+                  setEditContent={setEditContent}
+                  aiFixTrigger={aiFixTrigger}
+                  // Memoized Editor Handlers
+                  memoizedHandleAISuggestion={memoizedHandleAISuggestion}
+                  memoizedSaveNote={memoizedSaveNote}
+                  memoizedCancelEditing={memoizedCancelEditing}
+                  memoizedStartEditing={memoizedStartEditing}
+                  memoizedExportToCalendar={memoizedExportToCalendar}
+                  memoizedFixContentWithAI={memoizedFixContentWithAI}
+                />
+              ) : isMobile ? null : (
+                <SelectNoteCard createNewNote={memoizedCreateNewNote} />
+              )}
+            </React.Suspense>
           </div>
         </div>
       </div>
