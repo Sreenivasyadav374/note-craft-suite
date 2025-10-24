@@ -75,7 +75,6 @@ const NotesApp = () => {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [isFixingContent, setIsFixingContent] = useState(false);
   const [aiFixTrigger, setAiFixTrigger] = useState(0);
-  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
@@ -88,6 +87,12 @@ const NotesApp = () => {
   const NOTES_PER_PAGE = 20; // same as NOTES_LIMIT
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.ceil(totalCount / NOTES_PER_PAGE);
+
+  const [folderHistory, setFolderHistory] = useState<string[]>([]);
+
+// Derive the activeFolderId from the history stack.
+// If the stack is empty, we are in the root (parentId is null).
+const activeFolderId = folderHistory.length > 0 ? folderHistory[folderHistory.length - 1] : null;
 
   useEffect(() => {
     const initNotifications = async () => {
@@ -345,31 +350,30 @@ const NotesApp = () => {
   };
 
 const openFolder = useCallback((folderId: string) => {
-    setActiveFolderId(folderId);
-    setSelectedNote(null);
-    setIsEditing(false);
-    setSearchTerm("");
-}, [setActiveFolderId, setSelectedNote, setIsEditing, setSearchTerm]); // Dependencies are all stable state setters
+    // Only push if we are not already in that folder
+    if (folderId !== activeFolderId) {
+        setFolderHistory((prev) => [...prev, folderId]);
+        setSearchTerm("");      // Clear search state on navigation
+        setSelectedNote(null);  // Deselect any currently selected item
+    }
+    // Set mobile view to list (if applicable)
+    // setMobileView("list"); 
+}, [activeFolderId, setSearchTerm, setSelectedNote /* add other state setters */]);
 
 const navigateBack = useCallback(() => {
-    if (activeFolderId === null) return;
+    if (folderHistory.length > 0) {
+        // 💥 CRITICAL: Remove the last item from the history stack
+        setFolderHistory((prev) => prev.slice(0, -1)); 
+        
+        // Reset states
+        setSearchTerm("");
+        setSelectedNote(null);
+        setIsEditing(false);
+    }
+    // setMobileView("list");
+}, [folderHistory.length, setSearchTerm, setSelectedNote, setIsEditing /* add other state setters */]);
 
-    const currentFolder = notes.find(
-      (n) => n.id === activeFolderId && n.type === "folder"
-    );
-
-    setActiveFolderId(currentFolder?.parentId || null);
-    setSelectedNote(null);
-    setIsEditing(false);
-    setSearchTerm("");
-}, [
-    activeFolderId,
-    notes, // dependency from NotesContext
-    setActiveFolderId, 
-    setSelectedNote, 
-    setIsEditing, 
-    setSearchTerm
-]);
+// You must pass this 'navigateBack' handler to the SidebarControls component.
 
   const fixContentWithAI = async () => {
     if (!token || !selectedNote || selectedNote.type === "folder") return;
@@ -423,12 +427,16 @@ const navigateBack = useCallback(() => {
     }
   };
 
-  const currentNotes = useMemo(() => {
-    let items = notes.filter((note) => note.parentId === activeFolderId);
+const currentNotes = useMemo(() => {
+    // 'notes' is the full array of all notes and folders from your context
+    let itemsToDisplay = notes.filter(
+        // 💥 CRITICAL: Filter notes/folders whose parentId matches the current activeFolderId.
+        (item) => item.parentId === activeFolderId
+    );
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
-      items = items.filter(
+      itemsToDisplay = itemsToDisplay.filter(
         (note) =>
           note.title.toLowerCase().includes(lowerSearchTerm) ||
           (note.type === "file" &&
@@ -437,7 +445,7 @@ const navigateBack = useCallback(() => {
       );
     }
 
-    items.sort((a, b) => {
+    itemsToDisplay.sort((a, b) => {
       // Always show folders first
       if (a.type === "folder" && b.type === "file") return -1;
       if (a.type === "file" && b.type === "folder") return 1;
@@ -453,8 +461,9 @@ const navigateBack = useCallback(() => {
           return b.updatedAt.getTime() - a.updatedAt.getTime();
       }
     });
-    return items;
-}, [notes, searchTerm, activeFolderId, preferences.defaultSortOrder, /* etc. */]);
+
+    return itemsToDisplay;
+}, [notes, activeFolderId, searchTerm /* add other dependencies like sorting state */]);
 
   const handlePageChange = useCallback(
     (page: number) => {
