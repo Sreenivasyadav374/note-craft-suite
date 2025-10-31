@@ -57,8 +57,8 @@ export const useNoteActions = ({
           synced: false,
         };
       }
-
-      await addNoteOffline(parsedNote);
+      // OFFLINECOMMENT
+      //await addNoteOffline(parsedNote);
       setSelectedNote(parsedNote);
       setIsEditing(true);
 
@@ -152,8 +152,8 @@ export const useNoteActions = ({
       } else {
         updatedNote = { ...note, title, content, tags: tagsArray, updatedAt: new Date(), synced: false };
       }
-
-      await updateNoteOffline(updatedNote);
+      // OFFLINECOMMENT
+      //await updateNoteOffline(updatedNote);
       setSelectedNote(updatedNote);
       setIsEditing(false);
 
