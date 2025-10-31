@@ -171,7 +171,7 @@ export async function createNote(
 
 export async function updateNote(
   token: string,
-  id: string,
+  id: string | null | undefined,
   title: string,
   content: string,
   tags?: string[],
@@ -179,6 +179,10 @@ export async function updateNote(
   parentId?: string | null,
   reminderDate?: string | null
 ) {
+  if (!id || typeof id !== 'string' || id.trim() === '') {
+    throw new Error('Invalid or missing note ID. Cannot update note without a valid ID.');
+  }
+  
   try {
     const res = await fetchWithTimeout(`${API_URL}/notes/${id}`, {
       method: 'PUT',

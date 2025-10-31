@@ -33,7 +33,14 @@ export const useNoteActions = ({
       let parsedNote;
 
       if (navigator.onLine && token) {
-        const newNoteApi = await createNote(token, "Untitled Note", "", [], "file", activeFolderId);
+        const newNoteApi = await createNote(
+          token,
+          "Untitled Note",
+          "",
+          [],
+          "file",
+          activeFolderId
+        );
         parsedNote = {
           id: newNoteApi._id,
           title: newNoteApi.title,
@@ -83,7 +90,14 @@ export const useNoteActions = ({
     setIsCreating(true);
 
     try {
-      const newFolderApi = await createNote(token, "New Folder", "", [], "folder", activeFolderId);
+      const newFolderApi = await createNote(
+        token,
+        "New Folder",
+        "",
+        [],
+        "folder",
+        activeFolderId
+      );
       await refreshNotes(0, activeFolderId);
 
       toast({
@@ -102,138 +116,167 @@ export const useNoteActions = ({
   }, [isCreating, token, activeFolderId]);
 
   // ---------------- DELETE NOTE/FOLDER ----------------
-  const deleteNote = useCallback(async (noteToDelete: any) => {
-    if (!noteToDelete) return;
+  const deleteNote = useCallback(
+    async (noteToDelete: any) => {
+      if (!noteToDelete) return;
 
-    try {
-      if (navigator.onLine && token) {
-        await deleteNoteApi(token, noteToDelete.id);
-        await removeNoteFromIDB(noteToDelete.id);
-      } else {
-        await deleteNoteOffline(noteToDelete.id);
+      try {
+        if (navigator.onLine && token) {
+          await deleteNoteApi(token, noteToDelete.id);
+          await removeNoteFromIDB(noteToDelete.id);
+        } else {
+          await deleteNoteOffline(noteToDelete.id);
+        }
+
+        setNotes((prev: any) =>
+          prev.filter((n: any) => n.id !== noteToDelete.id)
+        );
+        toast({
+          title: "Deleted",
+          description: navigator.onLine
+            ? "Item removed successfully."
+            : "Deleted offline — will sync later.",
+        });
+      } catch (error: any) {
+        toast({
+          title: "Error deleting note",
+          description: error.message || "Failed to delete item.",
+          variant: "destructive",
+        });
       }
-
-      setNotes((prev: any) => prev.filter((n: any) => n.id !== noteToDelete.id));
-      toast({
-        title: "Deleted",
-        description: navigator.onLine
-          ? "Item removed successfully."
-          : "Deleted offline — will sync later.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error deleting note",
-        description: error.message || "Failed to delete item.",
-        variant: "destructive",
-      });
-    }
-  }, [token]);
+    },
+    [token]
+  );
 
   // ---------------- SAVE NOTE ----------------
-  const saveNote = useCallback(async (note: any, fields: any) => {
-    try {
-      const { title, content, tags, reminderDate } = fields;
-      const tagsArray = tags.split(",").map((t: string) => t.trim()).filter(Boolean);
+  const saveNote = useCallback(
+    async (note: any, fields: any) => {
+      try {
+        const { title, content, tags, reminderDate } = fields;
+        const tagsArray = tags
+          .split(",")
+          .map((t: string) => t.trim())
+          .filter(Boolean);
 
-      let updatedNote;
+        let updatedNote;
 
-      if (navigator.onLine && token && note.synced !== false) {
-        const updated = await updateNote(
-          token,
-          note.id,
-          title.trim() || "Untitled Note",
-          content,
-          tagsArray,
-          note.type,
-          note.parentId,
-          reminderDate || null
-        );
-        updatedNote = { ...updated, synced: true };
-      } else {
-        updatedNote = { ...note, title, content, tags: tagsArray, updatedAt: new Date(), synced: false };
+        if (navigator.onLine && token && note.synced !== false) {
+          const updated = await updateNote(
+            token,
+            note.id || note._id,
+            title.trim() || "Untitled Note",
+            content,
+            tagsArray,
+            note.type,
+            note.parentId,
+            reminderDate || null
+          );
+          updatedNote = { ...updated, synced: true };
+        } else {
+          updatedNote = {
+            ...note,
+            title,
+            content,
+            tags: tagsArray,
+            updatedAt: new Date(),
+            synced: false,
+          };
+        }
+        // OFFLINECOMMENT
+        //await updateNoteOffline(updatedNote);
+        setSelectedNote(updatedNote);
+        setIsEditing(false);
+
+        refreshNotes(0, activeFolderId);
+
+        toast({
+          title: "Saved",
+          description: navigator.onLine
+            ? "Changes saved successfully."
+            : "Saved offline — will sync when online.",
+        });
+      } catch (error: any) {
+        toast({
+          title: "Error saving note",
+          description: error.message || "Failed to save changes.",
+          variant: "destructive",
+        });
       }
-      // OFFLINECOMMENT
-      //await updateNoteOffline(updatedNote);
-      setSelectedNote(updatedNote);
-      setIsEditing(false);
-
-      toast({
-        title: "Saved",
-        description: navigator.onLine
-          ? "Changes saved successfully."
-          : "Saved offline — will sync when online.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error saving note",
-        description: error.message || "Failed to save changes.",
-        variant: "destructive",
-      });
-    }
-  }, [token]);
+    },
+    [token]
+  );
 
   // ---------------- AI: SUGGESTIONS ----------------
-  const suggestAI = useCallback(async (title: string, content: string, setFields: Function) => {
-    if (content.trim().length < 20) {
-      toast({
-        title: "Cannot suggest yet",
-        description: "Note must be at least 20 characters long.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSuggesting(true);
-    toast({ title: "AI Generating Suggestions..." });
-
-    try {
-      const suggestions = await aiService.generateNoteSuggestion(title, content);
-      if (suggestions) {
-        setFields({
-          title: suggestions.suggestedTitle,
-          tags: suggestions.suggestedTags.join(", "),
-        });
+  const suggestAI = useCallback(
+    async (title: string, content: string, setFields: Function) => {
+      if (content.trim().length < 20) {
         toast({
-          title: "AI Suggestions Applied",
-          description: `Title: ${suggestions.suggestedTitle}`,
+          title: "Cannot suggest yet",
+          description: "Note must be at least 20 characters long.",
+          variant: "destructive",
         });
+        return;
       }
-    } catch {
-      toast({
-        title: "AI Suggestion Failed",
-        description: "Error contacting AI service.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSuggesting(false);
-    }
-  }, []);
+
+      setIsSuggesting(true);
+      toast({ title: "AI Generating Suggestions..." });
+
+      try {
+        const suggestions = await aiService.generateNoteSuggestion(
+          title,
+          content
+        );
+        if (suggestions) {
+          setFields({
+            title: suggestions.suggestedTitle,
+            tags: suggestions.suggestedTags.join(", "),
+          });
+          toast({
+            title: "AI Suggestions Applied",
+            description: `Title: ${suggestions.suggestedTitle}`,
+          });
+        }
+      } catch {
+        toast({
+          title: "AI Suggestion Failed",
+          description: "Error contacting AI service.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSuggesting(false);
+      }
+    },
+    []
+  );
 
   // ---------------- AI: FIX CONTENT ----------------
-  const fixContentAI = useCallback(async (content: string, setContent: Function) => {
-    if (!content.trim()) {
-      toast({ title: "Cannot enhance empty note" });
-      return;
-    }
-    setIsFixingContent(true);
-    toast({ title: "Enhancing content..." });
-
-    try {
-      const fixed = await aiService.fixGrammarAndSpelling(content);
-      if (fixed) {
-        setContent(fixed);
-        toast({ title: "Content Enhanced!" });
+  const fixContentAI = useCallback(
+    async (content: string, setContent: Function) => {
+      if (!content.trim()) {
+        toast({ title: "Cannot enhance empty note" });
+        return;
       }
-    } catch {
-      toast({
-        title: "Enhancement Failed",
-        description: "Error contacting AI service.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFixingContent(false);
-    }
-  }, []);
+      setIsFixingContent(true);
+      toast({ title: "Enhancing content..." });
+
+      try {
+        const fixed = await aiService.fixGrammarAndSpelling(content);
+        if (fixed) {
+          setContent(fixed);
+          toast({ title: "Content Enhanced!" });
+        }
+      } catch {
+        toast({
+          title: "Enhancement Failed",
+          description: "Error contacting AI service.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsFixingContent(false);
+      }
+    },
+    []
+  );
 
   // ---------------- EXPORT TO CALENDAR ----------------
   const exportCalendar = useCallback((note: any, provider: string) => {
@@ -256,7 +299,9 @@ export const useNoteActions = ({
       endDate,
     };
 
-    calendarService[`addTo${provider.charAt(0).toUpperCase() + provider.slice(1)}Calendar`](event);
+    calendarService[
+      `addTo${provider.charAt(0).toUpperCase() + provider.slice(1)}Calendar`
+    ](event);
     toast({ title: "Calendar export started" });
   }, []);
 
