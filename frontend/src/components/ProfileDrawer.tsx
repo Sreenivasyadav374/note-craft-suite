@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react';
 import { User, Crown, Sparkles, Shield, Zap, LogOut } from "lucide-react";
 import {
   Sheet,
@@ -23,10 +24,10 @@ interface ProfileDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function ProfileDrawer({
+const ProfileDrawer = React.memo(({
   open,
   onOpenChange,
-}: ProfileDrawerProps) {
+}: ProfileDrawerProps) => {
   const {
     token,
     logout,
@@ -44,11 +45,11 @@ export default function ProfileDrawer({
   const userPicture = userProfile?.picture;
   const userInitials = username.substring(0, 2).toUpperCase();
 
-  const handleUploadSuccess = (imageUrl: string) => {
+  const handleUploadSuccess = useCallback((imageUrl: string) => {
     updateProfilePicture(imageUrl);
-  };
+  }, [updateProfilePicture]);
 
-  const handleGoogleSuccess = async (
+  const handleGoogleSuccess = useCallback(async (
     credentialResponse: CredentialResponse
   ) => {
     if (credentialResponse.credential) {
@@ -67,15 +68,15 @@ export default function ProfileDrawer({
         });
       }
     }
-  };
+  }, [googleLogin, toast, onOpenChange]);
 
-  const handleGoogleError = () => {
+  const handleGoogleError = useCallback(() => {
     toast({
       title: "Sign-in failed",
       description: "Failed to sign in with Google. Please try again.",
       variant: "destructive",
     });
-  };
+  }, [toast]);
 
   const premiumFeatures = [
     {
@@ -242,4 +243,7 @@ export default function ProfileDrawer({
       </SheetContent>
     </Sheet>
   );
-}
+});
+
+ProfileDrawer.displayName = 'ProfileDrawer';
+export default ProfileDrawer;

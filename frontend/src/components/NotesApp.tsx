@@ -82,33 +82,33 @@ const NotesApp = () => {
   });
 
   const memoizedStartEditing = useCallback(
-  (note: any) => {
-    setSelectedNote(note);
-    setIsEditing(true);
-    setEditTitle(note.title);
-    setEditContent(note.content);
-    setEditTags(note.tags.join(", "));
-    if (note.reminderDate) {
-      const local = new Date(note.reminderDate);
-      const localISOString = new Date(
-        local.getTime() - local.getTimezoneOffset() * 60000
-      )
-        .toISOString()
-        .slice(0, 16);
-      setEditReminderDate(localISOString);
-    } else {
-      const today = new Date();
-      today.setHours(12, 0, 0, 0);
-      const defaultISOString = new Date(
-        today.getTime() - today.getTimezoneOffset() * 60000
-      )
-        .toISOString()
-        .slice(0, 16);
-      setEditReminderDate(defaultISOString);
-    }
-  },
-  []
-);
+    (note: any) => {
+      setSelectedNote(note);
+      setIsEditing(true);
+      setEditTitle(note.title);
+      setEditContent(note.content);
+      setEditTags(note.tags.join(", "));
+      if (note.reminderDate) {
+        const local = new Date(note.reminderDate);
+        const localISOString = new Date(
+          local.getTime() - local.getTimezoneOffset() * 60000
+        )
+          .toISOString()
+          .slice(0, 16);
+        setEditReminderDate(localISOString);
+      } else {
+        const today = new Date();
+        today.setHours(12, 0, 0, 0);
+        const defaultISOString = new Date(
+          today.getTime() - today.getTimezoneOffset() * 60000
+        )
+          .toISOString()
+          .slice(0, 16);
+        setEditReminderDate(defaultISOString);
+      }
+    },
+    []
+  );
 
 
   // --- Note actions (CRUD, AI, Calendar)
@@ -223,12 +223,16 @@ const NotesApp = () => {
     );
   }
 
+  const navigateToCalendar = useCallback(() => {
+    navigate("/calendar");
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader
         userProfile={userProfile}
         setIsDrawerOpen={setIsDrawerOpen}
-        navigateToCalendar={() => navigate("/calendar")}
+        navigateToCalendar={navigateToCalendar}
       />
 
       <Suspense fallback={null}>
