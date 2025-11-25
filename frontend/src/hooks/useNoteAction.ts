@@ -82,7 +82,7 @@ export const useNoteActions = ({
     } finally {
       setIsCreating(false);
     }
-  }, [isCreating, token, activeFolderId]);
+  }, [isCreating, token, activeFolderId, setSelectedNote, setIsEditing, toast]);
 
   // ---------------- CREATE NEW FOLDER ----------------
   const createNewFolder = useCallback(async () => {
@@ -113,7 +113,7 @@ export const useNoteActions = ({
     } finally {
       setIsCreating(false);
     }
-  }, [isCreating, token, activeFolderId]);
+  }, [isCreating, token, activeFolderId, refreshNotes, toast]);
 
   // ---------------- DELETE NOTE/FOLDER ----------------
   const deleteNote = useCallback(
@@ -145,7 +145,7 @@ export const useNoteActions = ({
         });
       }
     },
-    [token]
+    [token, removeNoteFromIDB, deleteNoteOffline, setNotes, toast]
   );
 
   // ---------------- SAVE NOTE ----------------
@@ -203,7 +203,7 @@ export const useNoteActions = ({
         });
       }
     },
-    [token]
+    [token, activeFolderId, setSelectedNote, setIsEditing, refreshNotes, toast]
   );
 
   // ---------------- AI: SUGGESTIONS ----------------
