@@ -30,6 +30,22 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
       .skip(offset)
       .limit(limit);
 
+    
+// --------- Security-aware caching ----------
+    // Private user-specific data: avoid shared caches
+    // Use no-cache (validate every time) or no-store (no caching at all)
+    res.setHeader('Cache-Control', 'private, no-cache');
+    // If notes are highly sensitive, replace with:
+    // res.setHeader('Cache-Control', 'no-store');
+
+    // Prevent cache confusion across users/origins
+    res.setHeader('Vary', 'Authorization, Origin');
+
+    // Express will set ETag automatically unless disabled globally.
+    // If you want to ensure weak etags (usually fine):
+    // req.app.set('etag', 'weak');
+
+
     res.json({
       notes,
       totalCount,
