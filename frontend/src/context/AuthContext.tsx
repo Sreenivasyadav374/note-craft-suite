@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+  useCallback,
+} from 'react';
 import { register as apiRegister, login as apiLogin, googleLogin as apiGoogleLogin, getProfilePicture, changePassword as apiChangePassword } from '../lib/api';
 import { decodeJWT } from '../lib/jwt';
 
@@ -97,16 +105,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [token, refreshTokenValue]);
 
-  const register = async (username: string, password: string) => {
+  const register = useCallback(async (username: string, password: string) => {
     setLoading(true);
     setError(null);
     const res = await apiRegister(username, password);
     setLoading(false);
     if (res.error) setError(res.error);
     return res;
-  };
+  }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = useCallback(async (username: string, password: string) => {
     setLoading(true);
     setError(null);
     const res = await apiLogin(username, password);
@@ -140,9 +148,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(res.error);
     }
     return res;
-  };
+  }, []);
 
-const googleLogin = async (credential: string) => {
+  const googleLogin = useCallback(async (credential: string) => {
   setLoading(true);
   setError(null);
   const res = await apiGoogleLogin(credential);
@@ -189,9 +197,9 @@ const googleLogin = async (credential: string) => {
   }
 
   return res;
-};
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     if (refreshTokenValue) {
       import('../lib/logout').then(({ logoutApi }) => {
         logoutApi(refreshTokenValue);
@@ -201,23 +209,39 @@ const googleLogin = async (credential: string) => {
     setRefreshTokenValue(null);
     setUserProfile(null);
     localStorage.removeItem('userProfile');
-  };
+  }, [refreshTokenValue]);
 
-  const updateProfilePicture = (pictureUrl: string) => {
+  const updateProfilePicture = useCallback((pictureUrl: string) => {
     if (userProfile) {
       const updatedProfile = { ...userProfile, picture: pictureUrl };
       setUserProfile(updatedProfile);
       localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
     }
-  };
+  }, [userProfile]);
 
-  const changePassword = async (currentPassword: string, newPassword: string) => {
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     if (!token) return { success: false, error: 'Not authenticated' };
     return await apiChangePassword(token, currentPassword, newPassword);
-  };
+  }, [token]);
+
+  const contextValue = useMemo(() => ({
+    token,
+    refreshToken: refreshTokenValue,
+    isAuthenticated: !!token,
+    loading,
+    error,
+    initializing,
+    userProfile,
+    register,
+    login,
+    googleLogin,
+    logout,
+    updateProfilePicture,
+    changePassword
+  }), [token, refreshTokenValue, loading, error, initializing, userProfile, register, login, googleLogin, logout, updateProfilePicture, changePassword]);
 
   return (
-    <AuthContext.Provider value={{ token, refreshToken: refreshTokenValue, isAuthenticated: !!token, loading, error, initializing, userProfile, register, login, googleLogin, logout, updateProfilePicture, changePassword }}>
+    <AuthContext.Provider value={contextValue}>
       {!initializing && children}
     </AuthContext.Provider>
   );

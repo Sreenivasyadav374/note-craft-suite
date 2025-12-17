@@ -354,24 +354,27 @@ const refreshNotes = useCallback(
     //if (!isOffline) syncOfflineNotes();
   };
 
+  const removeNoteFromIDBWrapper = useCallback(async (noteId: string) => {
+    await removeNoteFromIDB(noteId);
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    notes,
+    sortedNotes,
+    setNotes,
+    isLoading,
+    refreshNotes,
+    loadMoreNotes,
+    hasMore,
+    totalCount,
+    addNoteOffline,
+    updateNoteOffline,
+    deleteNoteOffline,
+    removeNoteFromIDB: removeNoteFromIDBWrapper,
+  }), [notes, sortedNotes, isLoading, refreshNotes, loadMoreNotes, hasMore, totalCount, addNoteOffline, updateNoteOffline, deleteNoteOffline, removeNoteFromIDBWrapper]);
+
   return (
-    <NotesContext.Provider
-      value={{
-        notes,
-        sortedNotes,
-        setNotes,
-        isLoading,
-        refreshNotes,
-        loadMoreNotes, // Exported new function
-        hasMore, // Exported new state
-        totalCount, // Exported new state
-        addNoteOffline,
-        updateNoteOffline,
-        deleteNoteOffline,
-        //syncOfflineNotes,
-        removeNoteFromIDB,
-      }}
-    >
+    <NotesContext.Provider value={contextValue}>
       {children}
     </NotesContext.Provider>
   );

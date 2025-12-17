@@ -11,7 +11,7 @@ interface SelectNoteCardProps {
 }
 
 // Define the component using the props interface
-const SelectNoteCard: React.FC<SelectNoteCardProps> = ({ createNewNote }) => {
+const SelectNoteCard: React.FC<SelectNoteCardProps> = React.memo(({ createNewNote }) => {
     return (
         <Card className="shadow-elegant border-0 bg-gradient-card h-[calc(100vh-220px)]">
             <CardContent className="flex items-center justify-center h-full">
@@ -38,6 +38,7 @@ const SelectNoteCard: React.FC<SelectNoteCardProps> = ({ createNewNote }) => {
             </CardContent>
         </Card>
     );
-};
+});
 
+SelectNoteCard.displayName = 'SelectNoteCard';
 export default SelectNoteCard;

@@ -1,8 +1,13 @@
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
-const CreateNoteCard = ({notesLength}) => {
-  return(
+interface CreateNoteCardProps {
+  notesLength: number;
+}
+
+const CreateNoteCard: React.FC<CreateNoteCardProps> = React.memo(({ notesLength }) => {
+  return (
     <Card className="shadow-card border-0 bg-gradient-card">
                       <CardContent className="p-6 text-center">
                         <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -13,5 +18,8 @@ const CreateNoteCard = ({notesLength}) => {
                         </p>
                       </CardContent>
                     </Card>
-  )};
-  export default CreateNoteCard;
+  );
+});
+
+CreateNoteCard.displayName = 'CreateNoteCard';
+export default CreateNoteCard;

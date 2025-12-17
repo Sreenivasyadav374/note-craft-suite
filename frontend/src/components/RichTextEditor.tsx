@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -26,7 +27,7 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
-export const RichTextEditor = ({ content, onChange, placeholder }: RichTextEditorProps) => {
+export const RichTextEditor = React.memo(({ content, onChange, placeholder }: RichTextEditorProps) => {
   const { toast } = useToast();
   const { preferences } = usePreferences();
 
@@ -215,4 +216,4 @@ export const RichTextEditor = ({ content, onChange, placeholder }: RichTextEdito
       </div>
     </div>
   );
-};
+});
