@@ -10,7 +10,75 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 const REFRESH_TOKEN_EXP_DAYS = 7;
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     RegisterRequest:
+ *       type: object
+ *       required: [username, password]
+ *       properties:
+ *         username:
+ *           type: string
+ *         password:
+ *           type: string
+ *
+ *     LoginRequest:
+ *       type: object
+ *       required: [username, password]
+ *       properties:
+ *         username:
+ *           type: string
+ *         password:
+ *           type: string
+ *
+ *     AuthTokensResponse:
+ *       type: object
+ *       properties:
+ *         token:
+ *           type: string
+ *         refreshToken:
+ *           type: string
+ *
+ *     RefreshRequest:
+ *       type: object
+ *       required: [refreshToken]
+ *       properties:
+ *         refreshToken:
+ *           type: string
+ *
+ *     ChangePasswordRequest:
+ *       type: object
+ *       required: [currentPassword, newPassword]
+ *       properties:
+ *         currentPassword:
+ *           type: string
+ *         newPassword:
+ *           type: string
+ *           minLength: 6
+ */
+
 // Register
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Missing username or password
+ *       409:
+ *         description: Username already exists
+ */
 router.post('/register', async (req: Request, res: Response) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
@@ -27,6 +95,28 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // Login
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login using username and password
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthTokensResponse'
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post('/login', async (req: Request, res: Response) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username });
@@ -44,6 +134,30 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 // Refresh token endpoint (rotation)
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token using refresh token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshRequest'
+ *     responses:
+ *       200:
+ *         description: New access & refresh tokens issued
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthTokensResponse'
+ *       400:
+ *         description: No refresh token provided
+ *       401:
+ *         description: Invalid or expired refresh token
+ */
 router.post('/refresh', async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
   if (!refreshToken) return res.status(400).json({ error: 'No refresh token provided' });
@@ -64,6 +178,21 @@ router.post('/refresh', async (req: Request, res: Response) => {
 });
 
 // Logout endpoint: invalidate refresh token
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout and invalidate refresh token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshRequest'
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ */
 router.post('/logout', async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
   if (refreshToken) {
@@ -73,6 +202,30 @@ router.post('/logout', async (req: Request, res: Response) => {
 });
 
 // Change password endpoint
+/**
+ * @swagger
+ * /auth/change-password:
+ *   post:
+ *     summary: Change current user's password
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ChangePasswordRequest'
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Invalid current password
+ *       404:
+ *         description: User not found
+ */
 router.post('/change-password', authenticateToken, async (req: AuthRequest, res: Response) => {
   const { currentPassword, newPassword } = req.body;
   

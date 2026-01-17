@@ -4,6 +4,140 @@ import { authenticateToken, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Note:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Note ID
+ *         title:
+ *           type: string
+ *         content:
+ *           type: string
+ *         tags:
+ *           type: array
+ *           items:
+ *             type: string
+ *         user:
+ *           type: string
+ *           description: User ID
+ *         type:
+ *           type: string
+ *           enum: [file, folder]
+ *         parentId:
+ *           type: string
+ *           nullable: true
+ *         reminderDate:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *         notificationSent:
+ *           type: boolean
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ * 
+ *     CreateNoteRequest:
+ *       type: object
+ *       required: [title]
+ *       properties:
+ *         title:
+ *           type: string
+ *         content:
+ *           type: string
+ *         tags:
+ *           type: array
+ *           items:
+ *             type: string
+ *         type:
+ *           type: string
+ *           enum: [file, folder]
+ *         parentId:
+ *           type: string
+ *           nullable: true
+ *         reminderDate:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ * 
+ *     UpdateNoteRequest:
+ *       type: object
+ *       properties:
+ *         title:
+ *           type: string
+ *         content:
+ *           type: string
+ *         tags:
+ *           type: array
+ *           items:
+ *             type: string
+ *         type:
+ *           type: string
+ *           enum: [file, folder]
+ *         parentId:
+ *           type: string
+ *           nullable: true
+ *         reminderDate:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ * 
+ *     PaginatedNotesResponse:
+ *       type: object
+ *       properties:
+ *         notes:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Note'
+ *         totalCount:
+ *           type: integer
+ *         limit:
+ *           type: integer
+ *         offset:
+ *           type: integer
+ */
+
+
+/**
+ * @swagger
+ * /notes:
+ *   get:
+ *     summary: Get all notes for the authenticated user with pagination
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Number of notes per page
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of notes to skip
+ *     responses:
+ *       200:
+ *         description: List of notes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PaginatedNotesResponse'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   const userId = req.userId;
   
@@ -41,6 +175,30 @@ router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
 });
 
 // Get a single item (file or folder)
+/**
+ * @swagger
+ * /notes/{id}:
+ *   get:
+ *     summary: Get a note or folder by ID
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Note found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Note'
+ *       404:
+ *         description: Item not found
+ */
 router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   const note = await Note.findOne({ _id: req.params.id, user: req.userId });
   if (!note) return res.status(404).json({ error: 'Item not found' });
@@ -50,6 +208,41 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
 // notes.ts
 
 // Create a note or folder
+/**
+ * @swagger
+ * /notes:
+ *   post:
+ *     summary: Create a new note or folder
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateNoteRequest'
+ *           example:
+ *             title: "Untitled Note"
+ *             content: ""
+ *             tags: []
+ *             type: "file"
+ *             parentId: null        # ✅ null for top-level note
+ *             reminderDate: null
+ *     responses:
+ *       201:
+ *         description: Note created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Note'
+ *       400:
+ *         description: Invalid request (e.g., invalid parentId)
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
 router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   const { title, content, tags, type, parentId, reminderDate } = req.body;
 
@@ -69,6 +262,51 @@ router.post('/', authenticateToken, async (req: AuthRequest, res: Response) => {
 });
 
 // Update a note or folder
+/**
+ * @swagger
+ * /notes/{id}:
+ *   put:
+ *     summary: Update an existing note or folder
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: "ID of the note to update (ObjectId)"
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "64e4c6f5a2c3b6d9f7e2c1a8"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateNoteRequest'
+ *           example:
+ *             title: "Updated Note Title"
+ *             content: "Updated content of the note"
+ *             tags: ["work","important"]
+ *             type: "file"
+ *             parentId: null
+ *             reminderDate: "2026-01-20T10:00:00.000Z"
+ *     responses:
+ *       200:
+ *         description: Note updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Note'
+ *       400:
+ *         description: Invalid request (e.g., invalid parentId)
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Note not found
+ *       500:
+ *         description: Internal server error
+ */
 router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   const { title, content, tags, type, parentId, reminderDate } = req.body;
 
@@ -94,6 +332,31 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res: Response) =>
 
 
 // Delete a note or folder (with cascading deletion for children)
+/**
+ * @swagger
+ * /notes/{id}:
+ *   delete:
+ *     summary: Delete a note or folder (cascading deletion for children)
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Note ID
+ *     responses:
+ *       204:
+ *         description: Note deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Note not found
+ *       500:
+ *         description: Internal server error
+ */
 router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   const itemId = req.params.id;
   const userId = req.userId;
@@ -116,6 +379,18 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res: Response)
   res.status(204).send();
 });
 
+/**
+ * @swagger
+ * /notes/reminders/pending:
+ *   get:
+ *     summary: Get pending reminders
+ *     tags: [Reminders]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Pending reminders
+ */
 router.get('/reminders/pending', authenticateToken, async (req: AuthRequest, res: Response) => {
   const now = new Date();
   const notes = await Note.find({
@@ -126,6 +401,21 @@ router.get('/reminders/pending', authenticateToken, async (req: AuthRequest, res
   res.json(notes);
 });
 
+/**
+ * @swagger
+ * /notes/reminders/{id}/mark-sent:
+ *   post:
+ *     summary: Mark reminder as sent
+ *     tags: [Reminders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
 router.post('/reminders/:id/mark-sent', authenticateToken, async (req: AuthRequest, res: Response) => {
   const note = await Note.findOneAndUpdate(
     { _id: req.params.id, user: req.userId },

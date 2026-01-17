@@ -8,7 +8,72 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 const REFRESH_TOKEN_EXP_DAYS = 7;
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     GoogleAuthRequest:
+ *       type: object
+ *       required:
+ *         - credential
+ *       properties:
+ *         credential:
+ *           type: string
+ *           description: Google ID token (JWT credential from Google OAuth)
+ *
+ *     GoogleAuthResponse:
+ *       type: object
+ *       properties:
+ *         token:
+ *           type: string
+ *           description: Access JWT token
+ *         refreshToken:
+ *           type: string
+ *           description: Refresh token
+ *         user:
+ *           type: object
+ *           properties:
+ *             name:
+ *               type: string
+ *             email:
+ *               type: string
+ *             picture:
+ *               type: string
+ *               description: Google profile picture URL
+ */
+
 // Google OAuth endpoint
+/**
+ * @swagger
+ * /auth/google:
+ *   post:
+ *     summary: Authenticate user using Google OAuth
+ *     description: |
+ *       Accepts a Google ID token (`credential`) and returns access & refresh tokens.
+ *       If the user does not exist, a new account is created automatically.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/GoogleAuthRequest'
+ *           example:
+ *             credential: eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...
+ *     responses:
+ *       200:
+ *         description: Authentication successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/GoogleAuthResponse'
+ *       400:
+ *         description: No credential provided
+ *       401:
+ *         description: Invalid Google credential
+ *       500:
+ *         description: Authentication failed
+ */
 router.post('/google', async (req, res) => {
   const { credential } = req.body;
   
