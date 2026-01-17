@@ -66,7 +66,7 @@ MONGO_URI=mongodb://localhost:27017/notecraft
 JWT_SECRET=your_jwt_secret
 JWT_REFRESH_SECRET=your_refresh_secret
 GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret```
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 ````
 
 ### 2. Frontend (`/frontend/.env`)
@@ -74,7 +74,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret```
 Create a `.env` file in the frontend directory and add the following:
 
 ````env
-VITE_API_BASE_URL=http://localhost:4002```
+VITE_API_BASE_URL=http://localhost:4002
 ````
 
 ## ▶️ Running the Project Locally
