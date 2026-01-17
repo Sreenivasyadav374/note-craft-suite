@@ -1,34 +1,38 @@
-📝 NoteCraft Suite
-A robust, full-stack notes and reminders application featuring offline-first support, JWT authentication, Google OAuth, and Swagger-documented REST APIs. This project is structured as a monorepo for seamless development between frontend and backend.
+# 📝 NoteCraft Suite
 
-🚀 Features
-🔐 Authentication & Security
-Flexible Login: Email/Password authentication or Google OAuth 2.0.
+A robust, full-stack notes and reminders application featuring **offline-first support**, **JWT authentication**, **Google OAuth**, and **Swagger-documented REST APIs**. This project is structured as a **monorepo** for seamless development between frontend and backend.
 
-Secure Sessions: JWT-based access tokens with refresh token rotation.
+---
 
-Account Management: Secure logout and password change functionality.
+## 🚀 Features
 
-🗂 Notes & Folders
-Organization: Full CRUD operations for notes and folders.
+### 🔐 Authentication & Security
 
-Hierarchy: Nested folder structures for better categorization.
+- **Flexible Login:** Email/Password authentication or Google OAuth 2.0.
+- **Secure Sessions:** JWT-based access tokens with refresh token rotation.
+- **Account Management:** Secure logout and password change functionality.
 
-Reminders: Integrated reminder system with notification tracking.
+### 🗂 Notes & Folders
 
-🌐 Offline-First Experience
-Persistence: Use IndexedDB to create and edit notes without an internet connection.
+- **Organization:** Full CRUD operations for notes and folders.
+- **Hierarchy:** Nested folder structures for better categorization.
+- **Reminders:** Integrated reminder system with notification tracking.
 
-Auto-Sync: Data automatically synchronizes with the cloud once the connection is restored.
+### 🌐 Offline-First Experience
 
-📚 API Documentation
-Swagger (OpenAPI 3.0): Fully documented REST endpoints.
+- **Persistence:** Use IndexedDB to create and edit notes without an internet connection.
+- **Auto-Sync:** Data automatically synchronizes with the cloud once the connection is restored.
 
-Interactive UI: Test API requests directly from the browser.
+### 📚 API Documentation
 
-🏗 Architecture Overview
-Plaintext
+- **Swagger (OpenAPI 3.0):** Fully documented REST endpoints.
+- **Interactive UI:** Test API requests directly from the browser.
 
+---
+
+## 🏗 Architecture Overview
+
+```text
 note-craft-suite/
 ├── frontend/          # React + TypeScript (Vite)
 │   └── src/           # Offline-first UI & IndexedDB logic
@@ -39,80 +43,87 @@ note-craft-suite/
 │   │   ├── middleware/# Auth & Error handling
 │   │   └── swagger/   # OpenAPI definitions
 └── README.md
-🛠 Prerequisites
-Ensure you have the following installed:
+```
 
-Node.js (v18 or higher)
+## 🛠 Prerequisites
 
-MongoDB (Local instance or Atlas cluster)
+Make sure you have the following installed:
 
-npm or yarn
+- **Node.js** (v18 or higher)
+- **MongoDB** (Local instance or Atlas cluster)
+- **npm** or **yarn**
+- **Git**
 
-Git
+## ⚙️ Environment Setup
 
-⚙️ Environment Setup
-1. Backend (/backend/.env)
-Create a .env file in the backend directory:
+### 1. Backend (`/backend/.env`)
 
-Code snippet
+Create a `.env` file in the backend directory:
 
+````env
 PORT=4002
 MONGO_URI=mongodb://localhost:27017/notecraft
 JWT_SECRET=your_jwt_secret
 JWT_REFRESH_SECRET=your_refresh_secret
 GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-2. Frontend (/frontend/.env)
-Create a .env file in the frontend directory:
+GOOGLE_CLIENT_SECRET=your_google_client_secret```
+````
 
-Code snippet
+### 2. Frontend (`/frontend/.env`)
 
-VITE_API_BASE_URL=http://localhost:4002
-▶️ Running the Project Locally
-1. Clone the Repository
-Bash
+Create a `.env` file in the frontend directory and add the following:
 
-git clone https://github.com/your-username/note-craft-suite.git
-cd note-craft-suite
-2. Start the Backend
-Bash
+````env
+VITE_API_BASE_URL=http://localhost:4002```
+````
 
+## ▶️ Running the Project Locally
+
+### 1. Clone the Repository
+
+````bash
+git clone [https://github.com/your-username/note-craft-suite.git](https://github.com/your-username/note-craft-suite.git)
+cd note-craft-suite```
+
+````
+
+### 2. Start the Backend
+
+```bash
 cd backend
 npm install
 npm run dev
-The server will run at: http://localhost:4002
+```
 
-3. Start the Frontend
-Open a new terminal window:
+### 3. Start the Frontend
 
-Bash
+Open a new terminal window and run:
 
+```bash
 cd frontend
 npm install
 npm run dev
-The UI will usually be available at: http://localhost:5173
+```
 
-📖 API Documentation
+## 📖 API Documentation
+
 Once the backend is running, you can explore and test the APIs via Swagger:
+🔗 [http://localhost:4002/api-docs](http://localhost:4002/api-docs)
 
-🔗 http://localhost:4002/api-docs
+---
 
-Note: For protected endpoints, use the Authorize button in Swagger and provide your JWT Bearer token.
+## 🧠 Offline Sync Strategy
 
-🧠 Offline Sync Strategy
-To ensure a seamless user experience, NoteCraft Suite employs the following:
+- **Local Storage:** Uses **IndexedDB** for high-performance browser storage.
+- **State Tracking:** Notes created offline are flagged with `synced: false`.
+- **Background Sync:** Upon network reconnection, the app pushes unsynced changes to the server.
+- **Conflict Resolution:** Server-side timestamps resolve conflicts between local and remote data.
 
-Local Storage: Uses IndexedDB for high-performance browser storage.
+---
 
-State Tracking: Notes created offline are flagged with synced: false.
+## 👤 Author
 
-Background Sync: Upon network reconnection, the app pushes unsynced changes to the server.
+**Sreenivas Yadav** _Frontend / Full-Stack Developer_
 
-Conflict Resolution: Server-side timestamps are used to resolve conflicts between local and remote data.
-
-👤 Author
-Sreenivas Yadav Frontend / Full-Stack Developer
-
-Portfolio: View My Work
-
-LinkedIn: Srinivas Yadav
+- **Portfolio:** [View My Work](https://portfolio-website-ten-green-37.vercel.app)
+- **LinkedIn:** [Srinivas Yadav](https://www.linkedin.com/in/srinivas-yadav-b6a30527a)
