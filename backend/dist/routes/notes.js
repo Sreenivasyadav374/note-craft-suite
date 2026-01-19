@@ -6,13 +6,40 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const Note_1 = __importDefault(require("../models/Note"));
 const auth_1 = require("../middleware/auth");
+const mongoose_1 = __importDefault(require("mongoose"));
 const router = express_1.default.Router();
-// Get all notes (files and folders) for the authenticated user
-router.get('/', auth_1.authenticateToken, async (req, res) => {
-    // This route remains the same; it fetches all items for the user. 
-    // The frontend handles filtering by parentId.
-    const notes = await Note_1.default.find({ user: req.userId });
-    res.json(notes);
+router.get("/", auth_1.authenticateToken, async (req, res) => {
+    const userId = req.userId;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = parseInt(req.query.offset) || 0;
+    const parentId = req.query.parentId;
+    const filter = { user: userId };
+    try {
+        if (parentId === "null" || parentId === undefined) {
+            // ✅ Root-level notes (no folder)
+            filter.parentId = null;
+        }
+        else {
+            // ✅ Notes inside a specific folder
+            filter.parentId = new mongoose_1.default.Types.ObjectId(parentId);
+        }
+        const totalCount = await Note_1.default.countDocuments(filter);
+        const notes = await Note_1.default.find(filter)
+            .sort({ updatedAt: -1 })
+            .skip(offset)
+            .limit(limit);
+        res.json({
+            notes,
+            totalCount,
+            limit,
+            offset,
+            parentId: parentId || null,
+        });
+    }
+    catch (error) {
+        console.error("Error fetching paginated notes:", error);
+        res.status(500).json({ error: "Failed to fetch notes" });
+    }
 });
 // Get a single item (file or folder)
 router.get('/:id', auth_1.authenticateToken, async (req, res) => {

@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import Note from '../models/Note';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -140,37 +141,55 @@ const router = express.Router();
  */
 router.get('/', authenticateToken, async (req: AuthRequest, res: Response) => {
   const userId = req.userId;
-  
-  // 1. Get query parameters for pagination and set defaults
-  // The 'limit' dictates how many items to return per request (e.g., 20)
-  const limit = parseInt(req.query.limit as string) || 20; 
-  // The 'offset' dictates how many items to skip (e.g., 0 for page 1, 20 for page 2)
-  const offset = parseInt(req.query.offset as string) || 0; 
-  
-  // 2. Define the base filter (all items belonging to the user)
-  const filter = { user: userId };
-  
+
+  const limit = parseInt(req.query.limit as string) || 20;
+  const offset = parseInt(req.query.offset as string) || 0;
+  const parentId = req.query.parentId as string | undefined;
+
+  const filter: any = { user: userId };
+
   try {
-    // 3. Get the total count of documents matching the filter (important for frontend UI)
+    if (parentId === "null" || parentId === undefined) {
+      // ✅ Root-level notes (no folder)
+      filter.parentId = null;
+    } else {
+      // ✅ Notes inside a specific folder
+      filter.parentId = new mongoose.Types.ObjectId(parentId);
+    }
+
     const totalCount = await Note.countDocuments(filter);
 
-    // 4. Fetch the notes with sorting, skipping, and limiting
-    // We sort by 'updatedAt' descending to get the most recently modified notes first
     const notes = await Note.find(filter)
-      .sort({ updatedAt: -1 }) 
-      .skip(offset)             
-      .limit(limit);            
+      .sort({ updatedAt: -1 })
+      .skip(offset)
+      .limit(limit);
 
-    // 5. Send the paginated notes along with the total count
+    
+// --------- Security-aware caching ----------
+    // Private user-specific data: avoid shared caches
+    // Use no-cache (validate every time) or no-store (no caching at all)
+    res.setHeader('Cache-Control', 'private, no-cache');
+    // If notes are highly sensitive, replace with:
+    // res.setHeader('Cache-Control', 'no-store');
+
+    // Prevent cache confusion across users/origins
+    res.setHeader('Vary', 'Authorization, Origin');
+
+    // Express will set ETag automatically unless disabled globally.
+    // If you want to ensure weak etags (usually fine):
+    // req.app.set('etag', 'weak');
+
+
     res.json({
       notes,
       totalCount,
       limit,
       offset,
+      parentId: parentId || null,
     });
   } catch (error) {
-    console.error('Error fetching paginated notes:', error);
-    res.status(500).json({ error: 'Failed to fetch notes' });
+    console.error("Error fetching paginated notes:", error);
+    res.status(500).json({ error: "Failed to fetch notes" });
   }
 });
 

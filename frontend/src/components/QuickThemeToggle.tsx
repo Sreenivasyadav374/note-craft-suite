@@ -1,3 +1,4 @@
+import React from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { usePreferences, ThemeMode } from "@/context/PreferencesContext";
 
-export default function QuickThemeToggle() {
+const QuickThemeToggle = React.memo(() => {
   const { preferences, updatePreference } = usePreferences();
 
   const themeOptions: { mode: ThemeMode; label: string; icon: React.ReactNode }[] = [
@@ -48,4 +49,7 @@ export default function QuickThemeToggle() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});
+
+QuickThemeToggle.displayName = 'QuickThemeToggle';
+export default QuickThemeToggle;

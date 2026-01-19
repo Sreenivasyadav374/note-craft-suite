@@ -5,32 +5,57 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NoteCraft Suite</title>
   <meta name="description" content="Your intelligent note and task management suite." />
-  <meta name="author" content="Your Name" />
+  <meta name="author" content="Sreenivas Yadav" />
 
-  <!-- Favicon -->
+  <!-- ✅ Favicon -->
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 
-  <!-- Premium Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- ✅ Preconnects -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://note-craft-suite-backend.vercel.app" />
 
-  <!-- Open Graph / SEO -->
+  <!-- ✅ Preload critical font CSS (as style, non-blocking) -->
+  <link
+    rel="preload"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap"
+    as="style"
+    onload="this.rel='stylesheet'"
+  />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </noscript>
+
+  <!-- ✅ Preload and defer main CSS -->
+  <link rel="preload" href="/assets/index-D3sjjVV_.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript><link href="/assets/index-D3sjjVV_.css" rel="stylesheet" /></noscript>
+
+  <!-- ✅ SEO / Social -->
   <meta property="og:title" content="NoteCraft Suite" />
   <meta property="og:description" content="Your intelligent note and task management suite." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="/og-image.png" />
-
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@yourhandle" />
+  <meta name="twitter:site" content="@noteCraftSuite" />
   <meta name="twitter:image" content="/og-image.png" />
+
+  <!-- ✅ Preload your main bundle early -->
+  <link rel="modulepreload" href="/src/main.tsx" />
 </head>
 
+<body>
+  <!-- ✅ Render quick splash while React loads -->
+  <div id="root">
+    Loading NoteCraft Suite...
+  </div>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.10.36/build/spline-viewer.js"></script>
-  </body>
+  <!-- ✅ Defer main script -->
+  <script type="module" src="/src/main.tsx" defer></script>
+
+  <!-- ✅ Lazy-init analytics or heavy scripts (optional future slot) -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=GA_ID"></script> -->
+</body>
 </html>

@@ -91,28 +91,44 @@ export interface PaginatedNotesResponse {
   limit: number;
   offset: number;
 }
-export async function getNotes(token: string, limit: number, offset: number): Promise<PaginatedNotesResponse> {
+export async function getNotes(
+  token: string,
+  limit: number,
+  offset: number,
+  folderId: string | null = null
+): Promise<PaginatedNotesResponse> {
   try {
-    // Construct URL with query parameters for pagination
-    const url = `${API_URL}/notes?limit=${limit}&offset=${offset}`;
+    // ✅ Build query params dynamically
+    const params = new URLSearchParams({
+      limit: limit.toString(),
+      offset: offset.toString(),
+      ...(folderId ? { parentId: folderId } : {}), // 👈 only include if not null
+    });
+
+    const url = `${API_URL}/notes?${params.toString()}`;
 
     const res = await fetchWithTimeout(url, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
-    
+
     if (!res.ok) {
       if (res.status === 401) {
-        throw new Error('Session expired. Please log in again.');
+        throw new Error("Session expired. Please log in again.");
       }
-      const error = await res.json().catch(() => ({ message: 'Failed to fetch notes' }));
-      throw new Error(error.message || 'Failed to fetch notes');
+      const error = await res.json().catch(() => ({
+        message: "Failed to fetch notes",
+      }));
+      throw new Error(error.message || "Failed to fetch notes");
     }
 
-    return res.json() as Promise<PaginatedNotesResponse>;
+    return (await res.json()) as PaginatedNotesResponse;
   } catch (error: any) {
-    throw new Error(error.message || 'Unable to connect to server. Please try again later.');
+    throw new Error(
+      error.message || "Unable to connect to server. Please try again later."
+    );
   }
 }
+
 
 export async function createNote(
   token: string, 
@@ -155,7 +171,7 @@ export async function createNote(
 
 export async function updateNote(
   token: string,
-  id: string,
+  id: string | null | undefined,
   title: string,
   content: string,
   tags?: string[],
@@ -163,6 +179,10 @@ export async function updateNote(
   parentId?: string | null,
   reminderDate?: string | null
 ) {
+  if (!id || typeof id !== 'string' || id.trim() === '') {
+    throw new Error('Invalid or missing note ID. Cannot update note without a valid ID.');
+  }
+  
   try {
     const res = await fetchWithTimeout(`${API_URL}/notes/${id}`, {
       method: 'PUT',

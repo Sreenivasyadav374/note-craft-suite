@@ -1,6 +1,8 @@
 import { notificationService } from './notificationService';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4002';
+const API_URL = process.env.NODE_ENV === 'production' 
+  ?"https://note-craft-suite-backend.vercel.app/api" // ✅ Production: Use relative path for Vercel rewrite
+  : "http://localhost:4002/api"; // ✅ Development: Use known local absolute URL
 
 export interface ReminderNote {
   _id: string;
@@ -24,7 +26,7 @@ export class ReminderService {
 
   async checkPendingReminders(token: string): Promise<void> {
     try {
-      const response = await fetch(`${API_URL}/api/notes/reminders/pending`, {
+      const response = await fetch(`${API_URL}/notes/reminders/pending`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -53,7 +55,7 @@ export class ReminderService {
 
   async markReminderAsSent(token: string, noteId: string): Promise<void> {
     try {
-      await fetch(`${API_URL}/api/notes/reminders/${noteId}/mark-sent`, {
+      await fetch(`${API_URL}/notes/reminders/${noteId}/mark-sent`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 
 export type SortOrder = 'recent' | 'alphabetical' | 'oldest';
 export type EditorFontSize = 'small' | 'medium' | 'large';
@@ -52,17 +52,23 @@ export const PreferencesProvider = ({ children }: { children: ReactNode }) => {
     applyThemePreferences(preferences);
   }, [preferences]);
 
-  const updatePreference = <K extends keyof Preferences>(key: K, value: Preferences[K]) => {
+  const updatePreference = useCallback(<K extends keyof Preferences>(key: K, value: Preferences[K]) => {
     setPreferences((prev) => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const resetPreferences = () => {
+  const resetPreferences = useCallback(() => {
     setPreferences(defaultPreferences);
     localStorage.setItem('appPreferences', JSON.stringify(defaultPreferences));
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    preferences,
+    updatePreference,
+    resetPreferences
+  }), [preferences, updatePreference, resetPreferences]);
 
   return (
-    <PreferencesContext.Provider value={{ preferences, updatePreference, resetPreferences }}>
+    <PreferencesContext.Provider value={contextValue}>
       {children}
     </PreferencesContext.Provider>
   );

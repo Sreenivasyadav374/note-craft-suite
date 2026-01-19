@@ -2,22 +2,33 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { GoogleOAuthProvider } from '@react-oauth/google';
-
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import AuthPage from "./pages/Auth";
-import NotesPage from "./pages/Notes";
-import CalendarView from "./pages/CalendarView";
-import ProtectedExample from "./pages/ProtectedExample";
-import NotesApp from "./components/NotesApp";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { useAuthContext, AuthProvider } from "./context/AuthContext";
 import { NotesProvider } from "./context/NotesContext";
 import { PreferencesProvider } from "./context/PreferencesContext";
 import { ConnectionProvider } from "./context/ConnectionContext";
 
-// Replace with your actual Google Client ID
+import React, { Suspense } from "react";
+
+const LazyNotesApp = React.lazy(() => import("./components/NotesApp"));
+const LazyNotesPage = React.lazy(() => import("./pages/Notes"));
+const LazyCalendarView = React.lazy(() => import("./pages/CalendarView"));
+
+// Keep these as they are likely smaller and needed immediately:
+import AuthPage from "./pages/Auth";
+import NotFound from "./pages/NotFound";
+import ProtectedExample from "./pages/ProtectedExample";
+import Index from "./pages/Index";
+
+// ... (Context imports and GOOGLE_CLIENT_ID remain the same)
+
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const queryClient = new QueryClient();
@@ -40,41 +51,67 @@ const App = () => {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <AuthProvider>
         <ConnectionProvider>
-        <PreferencesProvider>
-          <NotesProvider>
-            <QueryClientProvider client={queryClient}>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/login" element={<AuthPage />} />
-                    <Route path="/register" element={<AuthPage />} />
-                    <Route path="/notes" element={<RequireAuth><NotesApp /></RequireAuth>} />
-                    <Route path="/calendar" element={<RequireAuth><CalendarView /></RequireAuth>} />
-                    <Route path="/" element={<RequireAuth><NotesPage /></RequireAuth>} />
-                    <Route path="/protected" element={<ProtectedExample />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
-              </TooltipProvider>
-            </QueryClientProvider>
-          </NotesProvider>
-        </PreferencesProvider>
+          <PreferencesProvider>
+            <NotesProvider>
+              <QueryClientProvider client={queryClient}>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    {/* 2. Wrap Routes in Suspense for loading state */}
+                    <Suspense
+                      fallback={
+                        <div className="flex justify-center items-center h-screen text-lg">
+                          Loading Application...
+                        </div>
+                      }
+                    >
+                      <Routes>
+                        <Route path="/login" element={<AuthPage />} />
+                        <Route path="/register" element={<AuthPage />} />
+
+                        {/* Use Lazy components for the main routes */}
+                        <Route
+                          path="/notes"
+                          element={
+                            <RequireAuth>
+                              <LazyNotesApp />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/calendar"
+                          element={
+                            <RequireAuth>
+                              <LazyCalendarView />
+                            </RequireAuth>
+                          }
+                        />
+                        <Route
+                          path="/"
+                          element={
+                            <RequireAuth>
+                              <LazyNotesPage />
+                            </RequireAuth>
+                          }
+                        />
+
+                        <Route
+                          path="/protected"
+                          element={<ProtectedExample />}
+                        />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </BrowserRouter>
+                </TooltipProvider>
+              </QueryClientProvider>
+            </NotesProvider>
+          </PreferencesProvider>
         </ConnectionProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );
 };
-
-function NotesAppWrapper() {
-  const { isAuthenticated, token } = useAuthContext();
-  console.log('NotesAppWrapper:', { isAuthenticated, token });
-  if (isAuthenticated) {
-    return <NotesApp />;
-  }
-  // Prevent rendering AuthPage if already authenticated; render nothing
-  return null;
-}
 
 export default App;
