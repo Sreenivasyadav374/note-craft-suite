@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Edit3, Save, X, Lightbulb, Bell, Calendar, Download } from 'lucide-react';
-import { Note, Folder } from '../types'; // Assuming types
-import { Spinner } from './ui/spinner'; // Assuming Spinner component
+import { Note, Folder } from '../types';
+import { Spinner } from './ui/spinner';
+import { useFlags } from 'launchdarkly-react-client-sdk';
 
 interface NoteEditorHeaderProps {
   selectedNote: Note | Folder;
@@ -62,8 +63,8 @@ const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = React.memo(({
           )}
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {/* AI Suggest Button (Edit Mode) */}
-          {isEditing && isFile && (
+          {/* AI Suggest Button (Edit Mode) - controlled by LaunchDarkly */}
+          {isEditing && isFile && showAiFeatures && (
             <Button
               onClick={handleAISuggestion}
               size="sm"
