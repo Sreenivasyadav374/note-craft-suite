@@ -1,9 +1,10 @@
 import React, { Suspense, lazy } from 'react';
 import { CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Spinner } from './ui/spinner'; // Assuming Spinner component
+import { Spinner } from './ui/spinner';
 import { Sparkles } from 'lucide-react';
 import { Note, Folder } from '../types';
+import { useFlags } from 'launchdarkly-react-client-sdk';
 
 // Assuming LazyRichTextEditor is defined using React.lazy
 const LazyRichTextEditor = React.lazy(() =>

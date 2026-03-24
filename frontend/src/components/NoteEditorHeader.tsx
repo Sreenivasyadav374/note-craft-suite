@@ -42,6 +42,7 @@ const NoteEditorHeader: React.FC<NoteEditorHeaderProps> = React.memo(({
   startEditing,
   exportToCalendar,
 }) => {
+  const { showAiFeatures = false } = useFlags();
   const isFile = selectedNote.type === 'file';
   const note = selectedNote as Note;
 
