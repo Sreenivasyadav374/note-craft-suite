@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "dev": "cd frontend && npx vite",
+    "build": "cd frontend && npx vite build",
+    "preview": "cd frontend && npx vite preview"
+  },
   "dependencies": {
     "@react-oauth/google": "^0.12.2",
     "@tailwindcss/typography": "^0.5.19",
