@@ -81,7 +81,7 @@ const NoteContentView: React.FC<NoteContentViewProps> = React.memo(({
               <Sparkles className="h-4 w-4" />
             )}
             <span className="sr-only">Enhance Content (AI)</span>
-          </Button>
+          </Button>}
 
           {/* Lazy Loaded Rich Text Editor */}
           <Suspense
