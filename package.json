@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "preview": "cd frontend && npm run preview"
+  },
   "dependencies": {
     "@react-oauth/google": "^0.12.2",
     "@tailwindcss/typography": "^0.5.19",
