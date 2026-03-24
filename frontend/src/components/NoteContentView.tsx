@@ -34,6 +34,7 @@ const NoteContentView: React.FC<NoteContentViewProps> = React.memo(({
   fixContentWithAI,
   aiFixTrigger
 }) => {
+  const { showAiFeatures = false } = useFlags();
   const isFile = selectedNote.type === 'file';
   const note = selectedNote as Note;
 
@@ -41,8 +42,8 @@ const NoteContentView: React.FC<NoteContentViewProps> = React.memo(({
     <CardContent className="p-6 flex-1 min-h-0 overflow-auto">
       {isEditing && isFile ? (
         <div className="relative h-full">
-          {/* AI Content Fix Button */}
-          <Button
+          {/* AI Content Fix Button - controlled by LaunchDarkly */}
+          {showAiFeatures && <Button
             onClick={fixContentWithAI}
             variant="ghost"
             className={`
