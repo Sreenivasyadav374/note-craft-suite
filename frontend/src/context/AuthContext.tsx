@@ -17,10 +17,11 @@ export interface AuthContextType {
   loading: boolean;
   error: string | null;
   initializing: boolean;
-  userProfile: { name: string; email: string; picture?: string } | null;
+  userProfile: { name: string; email: string; picture?: string; isGuest?: boolean } | null;
   register: (username: string, password: string) => Promise<any>;
   login: (username: string, password: string) => Promise<any>;
   googleLogin: (credential: string) => Promise<any>;
+  guestLogin: () => void;
   logout: () => void;
   updateProfilePicture: (pictureUrl: string) => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<any>;
@@ -51,20 +52,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Fetch profile picture if token exists
+    // Fetch profile picture if token exists and not a guest
     if (storedToken) {
-      getProfilePicture(storedToken)
-        .then(profileData => {
-          if (profileData.profilePicture) {
-            const currentProfile = storedProfile ? JSON.parse(storedProfile) : {};
-            const updatedProfile = { ...currentProfile, picture: profileData.profilePicture };
-            setUserProfile(updatedProfile);
-            localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch profile picture on mount:', error);
-        });
+      const profile = storedProfile ? JSON.parse(storedProfile) : null;
+      if (!profile?.isGuest) {
+        getProfilePicture(storedToken)
+          .then(profileData => {
+            if (profileData.profilePicture) {
+              const currentProfile = storedProfile ? JSON.parse(storedProfile) : {};
+              const updatedProfile = { ...currentProfile, picture: profileData.profilePicture };
+              setUserProfile(updatedProfile);
+              localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+            }
+          })
+          .catch(error => {
+            console.error('Failed to fetch profile picture on mount:', error);
+          });
+      }
     }
 
     setInitializing(false);
@@ -199,17 +203,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return res;
   }, []);
 
+  const guestLogin = useCallback(() => {
+    const guestProfile = {
+      name: 'Guest User',
+      email: 'guest@example.com',
+      isGuest: true
+    };
+    const guestToken = 'guest-token-' + Date.now();
+    setToken(guestToken);
+    setUserProfile(guestProfile);
+    localStorage.setItem('token', guestToken);
+    localStorage.setItem('userProfile', JSON.stringify(guestProfile));
+  }, []);
+
   const logout = useCallback(() => {
-    if (refreshTokenValue) {
+    // Check if this is a guest logout
+    const isGuest = userProfile?.isGuest;
+
+    if (isGuest) {
+      // Clear guest data
+      localStorage.removeItem('guest_notes');
+    } else if (refreshTokenValue) {
+      // Regular user logout
       import('../lib/logout').then(({ logoutApi }) => {
         logoutApi(refreshTokenValue);
       });
     }
+
     setToken(null);
     setRefreshTokenValue(null);
     setUserProfile(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('userProfile');
-  }, [refreshTokenValue]);
+  }, [refreshTokenValue, userProfile]);
 
   const updateProfilePicture = useCallback((pictureUrl: string) => {
     if (userProfile) {
@@ -235,10 +262,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register,
     login,
     googleLogin,
+    guestLogin,
     logout,
     updateProfilePicture,
     changePassword
-  }), [token, refreshTokenValue, loading, error, initializing, userProfile, register, login, googleLogin, logout, updateProfilePicture, changePassword]);
+  }), [token, refreshTokenValue, loading, error, initializing, userProfile, register, login, googleLogin, guestLogin, logout, updateProfilePicture, changePassword]);
 
   return (
     <AuthContext.Provider value={contextValue}>

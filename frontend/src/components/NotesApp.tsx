@@ -17,6 +17,7 @@ import PaginationControls from "@/components/PaginationControls";
 import AppHeader from "@/components/AppHeader";
 import NoteList from "./NoteList";
 import SelectNoteCard from "./SelectNoteCard";
+import GuestModeBanner from "./GuestModeBanner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -229,6 +230,10 @@ const NotesApp = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {userProfile?.isGuest && (
+        <GuestModeBanner onSignUp={() => navigate("/login")} />
+      )}
+
       <AppHeader
         userProfile={userProfile}
         setIsDrawerOpen={setIsDrawerOpen}

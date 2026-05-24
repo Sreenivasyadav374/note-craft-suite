@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import "@/styles/auth.css"; // Assuming you have a CSS file for styles
 
 export default function AuthPage() {
-  const { register, login, googleLogin, error, loading, isAuthenticated } =
+  const { register, login, googleLogin, guestLogin, error, loading, isAuthenticated } =
     useAuthContext();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -50,6 +50,14 @@ export default function AuthPage() {
       title: "Error",
       description: "Google sign-in failed",
       variant: "destructive",
+    });
+  };
+
+  const handleGuestLogin = () => {
+    guestLogin();
+    toast({
+      title: "Welcome!",
+      description: "You're now logged in as a guest",
     });
   };
 
@@ -177,6 +185,23 @@ export default function AuthPage() {
               </span>
             </div>
           </div>
+
+          {/* Guest Login Button */}
+          <button
+            className="w-full h-12 rounded-xl font-semibold text-base bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-elegant hover:shadow-lg hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            type="button"
+            onClick={handleGuestLogin}
+            disabled={loading}
+          >
+            {loading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                <span>Please wait...</span>
+              </div>
+            ) : (
+              "Login as Guest"
+            )}
+          </button>
 
           {/* Google Sign-In Button */}
           <div className="flex justify-center">

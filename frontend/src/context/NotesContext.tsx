@@ -24,6 +24,15 @@ import {
   deleteNote as deleteNoteApi,
 } from "../lib/api";
 import { useConnection } from "../context/ConnectionContext";
+import {
+  getGuestNotes,
+  saveGuestNotes,
+  createGuestNote,
+  updateGuestNote,
+  deleteGuestNote,
+  getGuestNotesPaginated,
+  GuestNote,
+} from "../lib/guestService";
 
 // ---------- Add / Update / Delete ----------
 import { v4 as uuidv4 } from "uuid";
@@ -64,7 +73,7 @@ const NotesContext = createContext<NotesContextType | undefined>(undefined);
 const NOTES_LIMIT = 20; // Define the page size constant
 
 export function NotesProvider({ children }: { children: ReactNode }) {
-  const { token, isAuthenticated } = useAuthContext();
+  const { token, isAuthenticated, userProfile } = useAuthContext();
   const { isOffline } = useConnection();
   const { preferences } = usePreferences();
   const sortOrder = preferences.defaultSortOrder;
@@ -79,12 +88,37 @@ export function NotesProvider({ children }: { children: ReactNode }) {
   // ----------------------------
 
   const isReplacingRef = useRef(false);
+  const isGuest = userProfile?.isGuest;
 
 const fetchNotes = useCallback(
   async (currentOffset: number, folderId: string | null = null) => {
     if (!token) return;
     setIsLoading(true);
     try {
+      // ✅ Handle guest mode
+      if (isGuest) {
+        const response = getGuestNotesPaginated(NOTES_LIMIT, currentOffset, folderId);
+        const guestNotes: Note[] = response.notes.map((note: GuestNote) => ({
+          id: note._id,
+          title: note.title,
+          content: note.content,
+          tags: note.tags || [],
+          createdAt: new Date(note.createdAt),
+          updatedAt: new Date(note.updatedAt),
+          reminderDate: note.reminderDate ? new Date(note.reminderDate) : null,
+          notificationSent: false,
+          type: note.type,
+          parentId: note.parentId,
+          synced: true,
+          action: undefined,
+        }));
+
+        setNotes(guestNotes);
+        setTotalCount(response.totalCount);
+        setOffset(currentOffset + NOTES_LIMIT);
+        return;
+      }
+
       // ✅ Pass limit, offset, and folderId to the API
       const response = await fetchNotesFromAPI(
         token,
@@ -141,7 +175,7 @@ const fetchNotes = useCallback(
       setIsLoading(false);
     }
   },
-  [token]
+  [token, isGuest]
 );
 
 
@@ -151,7 +185,7 @@ const refreshNotes = useCallback(
     if (!isAuthenticated) return;
     isReplacingRef.current = true; // ✅ tell fetchNotes to REPLACE notes
     try {
-      if (!isOffline) {
+      if (!isOffline || isGuest) {
         // 👇 Pass folderId to fetchNotes
         await fetchNotes(newOffset, folderId);
       } else {
@@ -168,7 +202,7 @@ const refreshNotes = useCallback(
       isReplacingRef.current = false;
     }
   },
-  [isAuthenticated, isOffline, fetchNotes]
+  [isAuthenticated, isOffline, isGuest, fetchNotes]
 );
 
 
@@ -290,6 +324,36 @@ const refreshNotes = useCallback(
   // };
 
   const addNoteOffline = async (note: Note) => {
+    // ✅ Handle guest mode
+    if (isGuest) {
+      const guestNote = createGuestNote(
+        note.title,
+        note.content,
+        note.tags,
+        note.type,
+        note.parentId
+      );
+
+      const newNote: Note = {
+        id: guestNote._id,
+        title: guestNote.title,
+        content: guestNote.content,
+        tags: guestNote.tags,
+        createdAt: new Date(guestNote.createdAt),
+        updatedAt: new Date(guestNote.updatedAt),
+        reminderDate: guestNote.reminderDate ? new Date(guestNote.reminderDate) : null,
+        notificationSent: false,
+        type: guestNote.type,
+        parentId: guestNote.parentId,
+        synced: true,
+        action: undefined,
+      };
+
+      setNotes((prev) => [newNote, ...prev]);
+      setTotalCount((prev) => prev + 1);
+      return;
+    }
+
     const newNote = {
       ...note,
       id: uuidv4(), // Use UUID for temporary offline ID
@@ -315,6 +379,29 @@ const refreshNotes = useCallback(
   };
 
   const updateNoteOffline = async (updatedNote: Note) => {
+    // ✅ Handle guest mode
+    if (isGuest) {
+      const updates: Partial<GuestNote> = {
+        title: updatedNote.title,
+        content: updatedNote.content,
+        tags: updatedNote.tags,
+        type: updatedNote.type,
+        parentId: updatedNote.parentId,
+        reminderDate: updatedNote.reminderDate?.toISOString() || null,
+      };
+
+      updateGuestNote(updatedNote.id, updates);
+
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === updatedNote.id
+            ? { ...updatedNote, updatedAt: new Date(), synced: true }
+            : n
+        )
+      );
+      return;
+    }
+
     const noteToSave: Note = {
       ...updatedNote,
       synced: false,
@@ -335,6 +422,14 @@ const refreshNotes = useCallback(
   };
 
   const deleteNoteOffline = async (noteId: string) => {
+    // ✅ Handle guest mode
+    if (isGuest) {
+      deleteGuestNote(noteId);
+      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      setTotalCount((prev) => Math.max(0, prev - 1));
+      return;
+    }
+
     // 1. Update local state
     setNotes((prev) => prev.filter((n) => n.id !== noteId));
 

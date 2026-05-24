@@ -39,6 +39,8 @@ const ProfileDrawer = React.memo(({
   } = useAuthContext();
   const { toast } = useToast();
 
+  const isGuest = userProfile?.isGuest;
+
   const payload = token ? decodeJWT(token) : null;
   const username = userProfile?.name || payload?.username || "User";
   const userEmail = userProfile?.email || payload?.email || "";
@@ -132,11 +134,24 @@ const ProfileDrawer = React.memo(({
             </div>
           ) : (
             <div className="bg-gradient-card rounded-2xl p-5 border border-border/50 shadow-card">
-              <ProfilePictureUpload
-                currentPicture={userPicture}
-                username={username}
-                onUploadSuccess={handleUploadSuccess}
-              />
+              {!isGuest && (
+                <ProfilePictureUpload
+                  currentPicture={userPicture}
+                  username={username}
+                  onUploadSuccess={handleUploadSuccess}
+                />
+              )}
+
+              {isGuest && (
+                <div className="text-center">
+                  <div className="mx-auto w-20 h-20 bg-gradient-to-r from-slate-500 to-slate-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                    <User className="h-10 w-10 text-white" />
+                  </div>
+                  <Badge className="bg-slate-600 text-white border-0 shadow-sm">
+                    Guest User
+                  </Badge>
+                </div>
+              )}
 
               <div className="mt-5 pt-5 border-t border-border/50 text-center">
                 <h3 className="text-xl font-bold text-foreground mb-1">
@@ -147,10 +162,12 @@ const ProfileDrawer = React.memo(({
                     {userEmail}
                   </p>
                 )}
-                <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 shadow-sm">
-                  <Crown className="h-3 w-3 mr-1" />
-                  Premium User
-                </Badge>
+                {!isGuest && (
+                  <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 shadow-sm">
+                    <Crown className="h-3 w-3 mr-1" />
+                    Premium User
+                  </Badge>
+                )}
               </div>
             </div>
           )}
@@ -161,58 +178,92 @@ const ProfileDrawer = React.memo(({
             <Tabs defaultValue="overview" className="py-5">
               <TabsList className="grid w-full grid-cols-3 mb-5">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-                <TabsTrigger value="linked">Accounts</TabsTrigger>
+                <TabsTrigger value="settings" disabled={isGuest}>
+                  Settings
+                </TabsTrigger>
+                <TabsTrigger value="linked" disabled={isGuest}>
+                  Accounts
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-5 mt-0">
-                <UsageStats />
-
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Your Premium Benefits
-                  </h4>
-
-                  {premiumFeatures.map((feature, index) => (
-                    <div
-                      key={index}
-                      className="bg-gradient-card backdrop-blur-sm rounded-xl p-4 border border-border/50 hover:shadow-card transition-smooth group"
+                {isGuest ? (
+                  <div className="bg-gradient-card backdrop-blur-sm rounded-xl p-6 border border-border/50 text-center">
+                    <h4 className="text-lg font-semibold text-foreground mb-3">
+                      Welcome, Guest!
+                    </h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      You're currently using the app in guest mode. Your notes
+                      are stored locally on this device only. Sign up to sync
+                      your data across devices and unlock all premium features!
+                    </p>
+                    <Button
+                      className="bg-gradient-primary hover:opacity-90 shadow-glow"
+                      onClick={() => {
+                        logout();
+                        onOpenChange(false);
+                      }}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-smooth">
-                          <feature.icon className="h-4 w-4 text-primary" />
+                      Sign Up for Free
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <UsageStats />
+
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                        Your Premium Benefits
+                      </h4>
+
+                      {premiumFeatures.map((feature, index) => (
+                        <div
+                          key={index}
+                          className="bg-gradient-card backdrop-blur-sm rounded-xl p-4 border border-border/50 hover:shadow-card transition-smooth group"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-smooth">
+                              <feature.icon className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-semibold text-foreground mb-0.5 text-sm">
+                                {feature.title}
+                              </h5>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {feature.description}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h5 className="font-semibold text-foreground mb-0.5 text-sm">
-                            {feature.title}
-                          </h5>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {feature.description}
-                          </p>
-                        </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
               </TabsContent>
 
-              <TabsContent value="settings" className="mt-0">
-                <AccountSettings />
-              </TabsContent>
+              {!isGuest && (
+                <>
+                  <TabsContent value="settings" className="mt-0">
+                    <AccountSettings />
+                  </TabsContent>
 
-              <TabsContent value="linked" className="mt-0">
-                <LinkedAccounts />
-              </TabsContent>
+                  <TabsContent value="linked" className="mt-0">
+                    <LinkedAccounts />
+                  </TabsContent>
+                </>
+              )}
             </Tabs>
 
             <div className="space-y-2.5 pt-5 border-t border-border/50">
-              <Button
-                className="w-full bg-gradient-primary hover:opacity-90 shadow-glow font-semibold py-5 rounded-xl text-base"
-                size="lg"
-              >
-                <Crown className="h-4 w-4 mr-2" />
-                Manage Subscription
-              </Button>
+              {!isGuest && (
+                <Button
+                  className="w-full bg-gradient-primary hover:opacity-90 shadow-glow font-semibold py-5 rounded-xl text-base"
+                  size="lg"
+                >
+                  <Crown className="h-4 w-4 mr-2" />
+                  Manage Subscription
+                </Button>
+              )}
 
               <Button
                 onClick={() => {
@@ -225,20 +276,26 @@ const ProfileDrawer = React.memo(({
                 disabled={loading}
               >
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                {isGuest ? "Exit Guest Mode" : "Logout"}
               </Button>
             </div>
           </>
         )}
 
         <div className="pt-5 mt-5 border-t border-border/50">
-          <p className="text-xs text-muted-foreground text-center">
-            Member since{" "}
-            {new Date().toLocaleDateString("en-US", {
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
+          {isGuest ? (
+            <p className="text-xs text-muted-foreground text-center">
+              Guest data is stored locally on this device
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center">
+              Member since{" "}
+              {new Date().toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          )}
         </div>
       </SheetContent>
     </Sheet>
