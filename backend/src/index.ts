@@ -7,9 +7,6 @@ import authRoutes from './routes/auth';
 import googleAuthRoutes from './routes/google-auth';
 import notesRoutes from './routes/notes';
 import profileRoutes from './routes/profile';
-import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './swagger';
-
 
 dotenv.config();
 
@@ -41,13 +38,7 @@ const connectToDatabase = () => {
 
 // --- Middleware ---
 
-app.use(
-  cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
+app.use(cors());
 app.use(express.json());
 
 // Middleware to ensure database connection before routing
@@ -80,8 +71,6 @@ app.use('/api/profile', profileRoutes);
 app.get("/", (req, res) => {
   res.json({ status: "Backend running ✅", version: "1.0.0" });
 });
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 // --- Serverless Export & Local Execution ---

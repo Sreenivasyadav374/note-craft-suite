@@ -1,10 +1,9 @@
 import React, { Suspense, lazy } from 'react';
 import { CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Spinner } from './ui/spinner';
+import { Spinner } from './ui/spinner'; // Assuming Spinner component
 import { Sparkles } from 'lucide-react';
 import { Note, Folder } from '../types';
-import { useFlags } from 'launchdarkly-react-client-sdk';
 
 // Assuming LazyRichTextEditor is defined using React.lazy
 const LazyRichTextEditor = React.lazy(() =>
@@ -34,7 +33,6 @@ const NoteContentView: React.FC<NoteContentViewProps> = React.memo(({
   fixContentWithAI,
   aiFixTrigger
 }) => {
-  const { showAiFeatures = false } = useFlags();
   const isFile = selectedNote.type === 'file';
   const note = selectedNote as Note;
 
@@ -42,8 +40,8 @@ const NoteContentView: React.FC<NoteContentViewProps> = React.memo(({
     <CardContent className="p-6 flex-1 min-h-0 overflow-auto">
       {isEditing && isFile ? (
         <div className="relative h-full">
-          {/* AI Content Fix Button - controlled by LaunchDarkly */}
-          {showAiFeatures && <Button
+          {/* AI Content Fix Button */}
+          <Button
             onClick={fixContentWithAI}
             variant="ghost"
             className={`
@@ -81,7 +79,7 @@ const NoteContentView: React.FC<NoteContentViewProps> = React.memo(({
               <Sparkles className="h-4 w-4" />
             )}
             <span className="sr-only">Enhance Content (AI)</span>
-          </Button>}
+          </Button>
 
           {/* Lazy Loaded Rich Text Editor */}
           <Suspense
